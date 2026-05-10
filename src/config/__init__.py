@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, SecretStr, field_validator
 
 CONFIG_PATH = Path(__file__).resolve().parent / "config.json"
 
@@ -23,7 +23,7 @@ class BotConfig(BaseModel):
     system_prompt: str | None = None
     draft_interval_sec: float = 0.2
     approval_timeout_sec: int = 300
-    agent_timeout_sec: int = 180
+    agent_timeout_sec: int = 600
     session_idle_ttl_sec: int = 86400
     chat_logger_capacity: int = 256
     working_dir: str | None = None
@@ -58,11 +58,11 @@ class BotConfig(BaseModel):
 
     @field_validator("lang", mode="before")
     @classmethod
-    def _lang_lower(cls, v: Any) -> Any:
+    def _lang_lower(cls, v: object) -> object:
         return str(v).lower() if v is not None else v
 
 
-def _build(name: str, data: dict) -> BotConfig:
+def _build(name: str, data: dict[str, Any]) -> BotConfig:
     raw_token = data.get("telegram_bot_token") or os.environ.get(
         f"TELEGRAM_BOT_TOKEN_{name.upper()}", ""
     )
@@ -110,7 +110,7 @@ def _build(name: str, data: dict) -> BotConfig:
         commands_dir = str(cd.resolve())
 
     def _parse_chat_id_list(field: str) -> tuple[int, ...]:
-        raw = data.get(field, None)
+        raw = data.get(field)
         if raw is None:
             return ()
         if not isinstance(raw, list):

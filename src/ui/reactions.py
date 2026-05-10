@@ -11,9 +11,9 @@ that whitelist when adding new entries.
 
 import logging
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
-from .i18n import Translator
+from ..i18n import Translator
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class ReactionPicker:
         self,
         rules: Iterable[tuple[re.Pattern[str], str]],
         default: str = FALLBACK_REACTION,
-    ):
+    ) -> None:
         self._rules = list(rules)
         self._default = default
 

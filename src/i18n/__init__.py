@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 DEFAULT_LANG = "ru"
 _DIR = Path(__file__).resolve().parent
@@ -12,7 +13,7 @@ def available_languages() -> list[str]:
 
 
 class Translator:
-    def __init__(self, lang: str = DEFAULT_LANG):
+    def __init__(self, lang: str = DEFAULT_LANG) -> None:
         self.lang = lang
         path = _DIR / f"{lang}.json"
         if not path.exists():
@@ -29,7 +30,7 @@ class Translator:
                 with default_path.open(encoding="utf-8") as f:
                     self._fallback = json.load(f)
 
-    def t(self, key: str, **kwargs) -> str:
+    def t(self, key: str, **kwargs: object) -> str:
         s = self._strings.get(key)
         if s is None:
             s = self._fallback.get(key, key)
@@ -40,8 +41,13 @@ class Translator:
                 return s
         return s
 
-    def get(self, key: str, default=None):
-        """Return the raw value for a key (list/dict/str)."""
+    def get(self, key: str, default: Any = None) -> Any:
+        """Return the raw value for a key (list/dict/str).
+
+        Returns Any because JSON values are heterogeneous (the `reactions`
+        key is a list of dicts, `default_reaction` is a string, etc.).
+        Callers are expected to know the shape of the key they request.
+        """
         if key in self._strings:
             return self._strings[key]
         if key in self._fallback:

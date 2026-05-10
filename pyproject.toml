@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claude-code-telegram-agent-bot"
+version = "0.1.0"
+description = "Multi-bot Telegram agent for the Claude Agent SDK"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dependencies = [
+    "claude-agent-sdk>=0.1.0,<0.2",
+    "aiogram>=3.13,<4",
+    "aiohttp>=3.9,<4",
+    "telegramify-markdown>=0.5.1,<2",
+    "pydantic>=2.0,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pip-audit>=2.7",
+    "bandit>=1.7",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+agent-bot = "src.bot:_cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pycodestyle / pyflakes
+    "I",             # isort
+    "B",             # bugbear
+    "UP",            # pyupgrade
+    "ASYNC",         # async pitfalls
+    "S",             # bandit-lite
+    "RUF",           # ruff-specific
+    "SIM",           # simplify
+    "PTH",           # use pathlib
+    "ANN",           # annotation completeness
+    "RET",           # explicit returns
+    "ARG",           # unused arguments
+    "TC",            # typing import hygiene
+]
+ignore = [
+    "S101",    # assert is fine for internal invariants
+    "S110",    # try/except/pass is intentional in many Telegram paths
+    "E501",    # line length handled by formatter
+    "ANN401",  # Any at SDK / JSON boundaries is intentional
+    "TC006",   # cast() quoted-string style is optional
+    "RET504",  # explicit assign-then-return is sometimes clearer
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/i18n/*.json" = ["ALL"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = false  # SDK hook callbacks are intentionally untyped
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -5,6 +5,7 @@ text that is then fed into the regular agent flow.
 """
 
 import logging
+from typing import IO
 
 import aiohttp
 
@@ -28,7 +29,7 @@ class GroqTranscriber:
         model: str = DEFAULT_MODEL,
         base_url: str = DEFAULT_BASE_URL,
         timeout_sec: float = 60.0,
-    ):
+    ) -> None:
         self._http = http
         self._api_key = api_key
         self._model = model
@@ -37,11 +38,17 @@ class GroqTranscriber:
 
     async def transcribe(
         self,
-        audio: bytes,
+        audio: bytes | IO[bytes],
         filename: str,
         *,
         language: str | None = None,
     ) -> str:
+        """Send `audio` to Groq for transcription.
+
+        `audio` accepts raw bytes or any binary file-like object. The file-like
+        path lets the caller stream a large recording from disk without
+        loading it into memory.
+        """
         url = f"{self._base_url}/audio/transcriptions"
         form = aiohttp.FormData()
         form.add_field(

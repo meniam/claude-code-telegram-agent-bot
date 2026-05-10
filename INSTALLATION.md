@@ -42,7 +42,7 @@ cd agent-bot
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"   # pyproject.toml is the source of truth; [dev] adds ruff/mypy/pytest/bandit/pip-audit
 ```
 
 ## 4. Create the config
@@ -80,7 +80,7 @@ Open `src/config/config.json` and fill in at least one section:
 | `logs_dir` | Root log directory. `null` → console only. Otherwise `<logs_dir>/<internal_name>/bot.log` + `<chat_id>.log` are written. |
 | `draft_interval_sec` | Minimum seconds between draft-message updates while streaming. Default `0.2`. |
 | `approval_timeout_sec` | Seconds to wait for a permission reply before auto-deny. Default `300`. |
-| `agent_timeout_sec` | Hard timeout per Claude turn (seconds). Default `180`. |
+| `agent_timeout_sec` | Hard timeout per Claude turn (seconds). Default `600`. The wrap also covers `can_use_tool` interceptor time, so set this above the slowest combination of generation + user reaction time. |
 | `session_idle_ttl_sec` | Idle TTL for a per-chat `ClaudeSDKClient`; closed by background GC after this many seconds without traffic. Default `86400` (24 h). Set `0` to disable. |
 | `chat_logger_capacity` | Max number of per-chat file loggers kept in memory (LRU). Default `256`. |
 | `groq_api_key` | Groq API key for voice/audio transcription. Override via env `GROQ_API_KEY_<INTERNAL_NAME>` or fallback `GROQ_API_KEY`. `null` / missing → voice handler is disabled. |
@@ -125,10 +125,22 @@ Open the bot in Telegram → `/start` → ask a question. The bot will:
 2. Stream Claude's reply through `sendMessageDraft` (typing animation).
 3. Send the final response as a separate MarkdownV2 message.
 
-Commands:
+Commands (also visible in the Telegram `/` menu):
 
 - `/start` — greeting.
-- `/new` — start a fresh Claude Code session (context is dropped).
+- `/new` — start a fresh Claude Code session (context dropped, armed `/plan` cleared, active quiz cancelled).
+- `/context` — show context-window usage (percentage, used / max tokens, model, top categories).
+- `/plan <task>` — engage `permission_mode="plan"` for the chat and send the task. Claude builds a plan and calls `ExitPlanMode`; the bot renders it with Approve / Reject buttons. Freeform text while the buttons are on screen → Reject + feedback.
+- `/plan` (no args) — arm plan mode, the next text or voice message becomes the plan prompt.
+- `/cancel` — drop an armed `/plan` wait. Does **not** reset the session, does **not** cancel quizzes.
+- `/stop` — interrupt the running turn (`ClaudeSDKClient.interrupt`). Session stays open; next message starts a new turn with the same context.
+- `/mode [default|acceptEdits|plan]` — switch permission mode without resetting the session. No argument → inline keyboard.
+- `/model [<id>|default]` — switch model. No argument → inline keyboard with Opus 4.7 / Sonnet 4.6 / Haiku 4.5 / default.
+- `/mcp` — list MCP servers attached to the session, grouped by status.
+- `/info` — show server info: active output style, available styles, slash commands exposed by the SDK.
+- `/whoami` — show your chat_id, access type, current mode, whether the session is live.
+- `/help` — list every command with its description and a usage example for the more involved ones.
+- Any `/<name>` defined in `commands_dir` (see [COMMANDS.md](COMMANDS.md)).
 
 Voice / audio messages are transcribed via Groq when `groq_api_key` is set — the bot echoes the transcript as a blockquote and runs the same agent flow on the recognized text.
 
@@ -256,6 +268,38 @@ Per-question timeout reuses `approval_timeout_sec` (default 300 s). On expiry th
 
 Sending any new message (text / voice / photo / document / sticker) while a quiz is mid-flight auto-skips the rest of the questions — the old turn finishes immediately and the new message is processed. This avoids a deadlock when you start typing a follow-up instead of clicking a stale button.
 
+### `/plan` and `ExitPlanMode` (plan approval)
+
+`/plan` is the user-facing entry point for Claude Code's plan mode:
+
+- `/plan <task>` — calls `ClaudeSDKClient.set_permission_mode("plan")` on the per-chat client (no session reset; context is preserved) and sends the task as the prompt.
+- `/plan` with no arguments — arms plan mode and waits for the next text or voice message; that message becomes the plan prompt. `/cancel` clears the wait. `/new` also clears it as part of the session reset.
+
+When Claude requests to leave plan mode (calls `ExitPlanMode`), the bot:
+
+- Renders the `plan` markdown to the chat (using the same MarkdownV2 chunker as regular replies — long plans are split into ≤ 4000-char messages; if MarkdownV2 fails, the original body is sent as plain text instead of the escaped fallback).
+- Posts a separate compact message holding two buttons: `✅ Approve` and `🚫 Reject`.
+- Resolves on whichever happens first:
+  - **Tap Approve** → `PermissionResultAllow()` — the SDK exits plan mode and lets Claude execute. The chat sees `▶️ План утверждён — агент начал работу.`.
+  - **Tap Reject** → `PermissionResultDeny(message="User rejected the plan.")`. The chat sees `🚫 План отклонён.`.
+  - **Type a freeform reply** while the buttons are on screen — counts as Reject *with feedback*. The text becomes the deny message and Claude reads it as the tool's failure reason, so it can revise the plan. The chat sees `🚫 План отклонён — отдаю фидбэк агенту.`.
+- On `approval_timeout_sec` expiry the prompt is dropped and Claude sees a generic rejection.
+
+Auto-cancel of armed `AskUserQuestion` quizzes is **not** wired here; freeform text *is* the response, so we let it through. All approve/reject decisions and the rendered plan length are written into `<chat_id>.log` as INFO entries.
+
+### `PushNotification` (model-driven notifications)
+
+`PushNotification` calls are intercepted: the `message` field is forwarded to the chat as `🔔 …` and Claude is told the notification was delivered. No buttons, no waiting.
+
+### `Monitor` / `TaskOutput` (status mirroring)
+
+These tools must keep running so the SDK can do its thing. The bot configures `PreToolUse` and `PostToolUse` hooks for the matcher `Monitor|TaskOutput`:
+
+- **Pre**: chat sees `🔧 Monitor: <description>` (or `🔧 Monitor` if no description). The tool then runs as usual.
+- **Post**: chat sees `✅ Monitor done` plus a preview of up to 6 lines / 600 chars of the tool's response if available.
+
+i18n keys: `tool_status_pre`, `tool_status_pre_no_desc`, `tool_status_post`, `tool_status_post_with_preview`.
+
 ## 10. Custom slash commands (optional)
 
 Drop a directory of `*.md` files anywhere readable, point `commands_dir` at it, and every file becomes a Telegram bot command whose body is sent to Claude as the user prompt. Full reference: [COMMANDS.md](COMMANDS.md).
@@ -292,27 +336,60 @@ Loading:
 agent-bot/
 ├── src/
 │   ├── __init__.py
-│   ├── bot.py              # entry point: python -m src.bot
-│   ├── agent.py            # AgentSessionManager (per-chat ClaudeSDKClient + idle GC)
-│   ├── streaming.py        # DraftStreamer
-│   ├── permissions.py      # TelegramPermissionGate
-│   ├── reactions.py        # keyword → emoji reactions
-│   ├── transcribe.py       # GroqTranscriber (voice/audio → text)
-│   ├── uploads.py          # UploadStore: saves photos/documents + per-chat queue
-│   ├── commands.py         # *.md → Telegram slash commands
-│   ├── logs.py             # BotLogs: bot.log + per-chat files
+│   ├── bot.py                  # entry: run_bot + _supervise + main + _make_* factories
 │   ├── config/
-│   │   ├── __init__.py     # BotConfig, load()
-│   │   ├── config.json             # real config, .gitignore'd
-│   │   └── config.example.json     # template
-│   └── i18n/
-│       ├── __init__.py     # Translator
-│       └── <lang>.json     # ru, en, zh, hi, es, ar, fr, bn, pt, ur, id, de, ja, sw, mr, te, tr, ta, vi, ko
-├── logs/                   # auto-created when logs_dir is set
-├── CLAUDE.md
+│   │   ├── __init__.py         # BotConfig (pydantic), load()
+│   │   ├── config.json         # real config, .gitignore'd
+│   │   └── config.example.json # template
+│   ├── i18n/
+│   │   ├── __init__.py         # Translator
+│   │   └── <lang>.json         # ar, bn, de, en, es, fr, hi, id, ja, ko, mr, pt, ru, sw, ta, te, tr, ur, vi, zh
+│   ├── infra/                  # state managers
+│   │   ├── agent.py            # AgentSessionManager (per-chat ClaudeSDKClient + idle GC + mode/model mirrors)
+│   │   ├── commands.py         # *.md → CommandDef loader
+│   │   ├── logs.py             # BotLogs (bot.log + per-chat files, LRU-bounded)
+│   │   ├── streaming.py        # DraftStreamer (sendMessageDraft animation, token-redacting logs)
+│   │   └── interactions/       # TelegramInteractionGate package
+│   │       ├── __init__.py     # re-exports TelegramInteractionGate
+│   │       ├── gate.py         # class + shared helpers + dispatch
+│   │       ├── permission_prompt.py   # Allow / Deny / Always flow
+│   │       ├── ask_user_question.py   # AskUserQuestion flow
+│   │       ├── plan_mode.py    # ExitPlanMode flow
+│   │       └── push_notification.py   # PushNotification flow
+│   ├── services/
+│   │   ├── transcribe.py       # GroqTranscriber (voice/audio → text; accepts bytes or file-like)
+│   │   └── upload_store.py     # UploadStore + PendingFile + format_attachment_prompt
+│   ├── ui/                     # bot-side UX helpers (no aiogram handlers)
+│   │   ├── agent_reply.py      # react_to + reply_with_agent
+│   │   ├── album.py            # AlbumDebouncer (media_group_id coalescing)
+│   │   ├── markdown.py         # to_mdv2, send_md, audio_filename, format_quote, TG_LIMIT
+│   │   ├── middleware.py       # AclMiddleware + deny_access
+│   │   ├── plan_router.py      # PlanRouter (per-chat /plan arm state + fire helper)
+│   │   ├── reactions.py        # ReactionPicker (keyword → emoji)
+│   │   ├── sdk_views.py        # format_context_usage / format_mcp_status / format_server_info
+│   │   └── tool_status.py      # ToolStatusMirror (PreToolUse / PostToolUse hooks)
+│   └── handlers/               # aiogram handlers (top-level fns + register(dp))
+│       ├── __init__.py         # register_all(dp, custom_commands)
+│       ├── context.py          # BotContext (frozen dataclass holding all wiring)
+│       ├── basic.py            # /start /new /cancel /context /stop /mcp /info /whoami /help
+│       ├── custom.py           # user-defined slash commands from commands_dir
+│       ├── plan.py             # /plan + perm/aq/plan callbacks
+│       ├── selectors.py        # /mode /model + their callbacks
+│       ├── text.py             # F.text catch-all
+│       ├── voice.py            # F.voice | F.audio
+│       └── uploads.py          # F.photo, F.document, F.sticker
+├── tests/                      # 76 pytest unit tests (config, commands, i18n, uploads, markdown, reactions, sdk_views, plan_router, streaming, logs, bot factories)
+├── commands/                   # example .md custom commands (gitignored)
+├── logs/                       # auto-created when logs_dir is set
+├── uploads/                    # auto-created when uploads_dir is set
+├── pyproject.toml              # build, deps, ruff/mypy/pytest config; [project.scripts] agent-bot
+├── requirements.txt            # legacy mirror of pyproject runtime deps
+├── AGENTS.md                   # full project guide for LLMs
+├── CONFIG.md                   # per-field config reference
+├── COMMANDS.md                 # custom slash-command reference
+├── CLAUDE.md                   # Claude Code orientation
 ├── INSTALLATION.md
 ├── README.md
-├── requirements.txt
 └── .gitignore
 ```
 
@@ -321,7 +398,7 @@ agent-bot/
 ```bash
 git pull
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
 Restart the process so changes take effect.

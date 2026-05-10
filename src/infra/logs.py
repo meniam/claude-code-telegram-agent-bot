@@ -5,6 +5,7 @@ File layout:
   <logs_dir>/<internal_name>/<chat_id>.log   — chat events (user/bot/errors)
 """
 
+import contextlib
 import logging
 import logging.handlers
 from collections import OrderedDict
@@ -45,7 +46,7 @@ class BotLogs:
         name: str,
         base_dir: Path | None,
         capacity: int = DEFAULT_CHAT_LOGGER_CAPACITY,
-    ):
+    ) -> None:
         self._name = name
         self._base = base_dir
         self._capacity = capacity
@@ -98,10 +99,8 @@ class BotLogs:
 
     def _evict(self, chat_id: int, log: logging.Logger) -> None:
         for handler in list(log.handlers):
-            try:
+            with contextlib.suppress(Exception):
                 handler.close()
-            except Exception:
-                pass
             log.removeHandler(handler)
         logging.Logger.manager.loggerDict.pop(
             f"bot.{self._name}.chat.{chat_id}", None

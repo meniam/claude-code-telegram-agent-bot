@@ -2,6 +2,7 @@ import itertools
 import logging
 import time
 from collections.abc import AsyncIterator
+from typing import Any
 
 import aiohttp
 
@@ -30,7 +31,7 @@ class DraftStreamer:
         token: str,
         http: aiohttp.ClientSession,
         interval_sec: float = DEFAULT_DRAFT_INTERVAL,
-    ):
+    ) -> None:
         self._token = token
         self._http = http
         self._interval = interval_sec
@@ -66,7 +67,12 @@ class DraftStreamer:
 
         return accumulated
 
-    async def _call(self, method: str, payload: dict) -> None:
+    def _redact(self, text: str) -> str:
+        # The bot token is embedded in the request URL and may surface in
+        # aiohttp error messages / tracebacks. Strip it before logging.
+        return text.replace(self._token, "***") if self._token else text
+
+    async def _call(self, method: str, payload: dict[str, Any]) -> None:
         url = f"{_TELEGRAM_API_BASE}/bot{self._token}/{method}"
         try:
             async with self._http.post(
@@ -74,6 +80,11 @@ class DraftStreamer:
             ) as resp:
                 if resp.status != 200:
                     body = await resp.text()
-                    log.warning("draft call %s -> %s: %s", method, resp.status, body[:200])
-        except Exception:
-            log.exception("draft call failed: %s", method)
+                    log.warning(
+                        "draft call %s -> %s: %s",
+                        method,
+                        resp.status,
+                        self._redact(body[:200]),
+                    )
+        except Exception as e:
+            log.warning("draft call failed: %s: %s", method, self._redact(repr(e)))

@@ -28,7 +28,7 @@ class PendingFile:
 
 
 class UploadStore:
-    def __init__(self, base_dir: Path):
+    def __init__(self, base_dir: Path) -> None:
         self._base = base_dir
         self._base.mkdir(parents=True, exist_ok=True)
         self._pending: dict[int, list[PendingFile]] = {}

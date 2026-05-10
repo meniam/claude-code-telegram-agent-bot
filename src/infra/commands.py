@@ -24,12 +24,19 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 # Telegram bot command name rules:
-#   1–32 chars, lowercase letters, digits and underscores only,
+#   1-32 chars, lowercase letters, digits and underscores only,
 #   must start with a letter.
 _NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
 
 # Reserve names handled by the bot itself.
-_BUILTIN_NAMES = frozenset({"start", "new"})
+_BUILTIN_NAMES = frozenset({
+    "start", "new", "context", "plan", "cancel",
+    "stop", "mode", "model", "mcp", "info", "whoami", "help",
+})
+
+# Hard cap on a single command file; anything larger is almost certainly
+# misconfigured (the prompt is sent to Claude verbatim).
+_MAX_COMMAND_FILE_BYTES = 1 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -86,6 +93,19 @@ def load_commands(commands_dir: Path) -> list[CommandDef]:
     seen: set[str] = set()
     for path in sorted(commands_dir.glob("*.md")):
         try:
+            size = path.stat().st_size
+        except OSError as e:
+            log.warning("could not stat command file %s: %s", path, e)
+            continue
+        if size > _MAX_COMMAND_FILE_BYTES:
+            log.warning(
+                "skipping %s: command file is %d bytes (max %d)",
+                path,
+                size,
+                _MAX_COMMAND_FILE_BYTES,
+            )
+            continue
+        try:
             text = path.read_text(encoding="utf-8")
         except OSError as e:
             log.warning("could not read command file %s: %s", path, e)
@@ -94,7 +114,7 @@ def load_commands(commands_dir: Path) -> list[CommandDef]:
         name = (meta.get("name") or path.stem).strip().lower()
         if not _NAME_RE.match(name):
             log.warning(
-                "skipping %s: invalid command name %r (need 1–32 chars, "
+                "skipping %s: invalid command name %r (need 1-32 chars, "
                 "lowercase letters/digits/_ , must start with a letter)",
                 path,
                 name,
