@@ -229,6 +229,32 @@ To allow a tool persistently (across restarts), add a rule manually to `<working
 
 The SDK loads `user/project/local` settings — those rules never reach the permission gate.
 
+The prompt message is **deleted** as soon as you click any button (or on timeout). The verdict shows up as a Telegram callback toast, so the chat does not pile up with stale button rows.
+
+### `AskUserQuestion` (interactive quiz)
+
+Claude's built-in `AskUserQuestion` tool is intercepted before it would otherwise hit the Allow/Deny/Always gate. The bot walks the `questions` array sequentially:
+
+- Single-select: each option is a button — first tap fires the answer.
+- Multi-select: option buttons toggle `▫️ ↔ ☑️`. The bottom row carries `✅ Done` to submit.
+- Every question has a `⏭ Skip` button.
+
+Result handed back to Claude (as the tool response):
+
+```
+User responded to AskUserQuestion via Telegram inline buttons:
+
+1. <question text>
+   → 'option label A'
+
+2. <question text>
+   → (skipped)
+```
+
+Per-question timeout reuses `approval_timeout_sec` (default 300 s). On expiry the bot sends a short notice and tells Claude no answer was given.
+
+Sending any new message (text / voice / photo / document / sticker) while a quiz is mid-flight auto-skips the rest of the questions — the old turn finishes immediately and the new message is processed. This avoids a deadlock when you start typing a follow-up instead of clicking a stale button.
+
 ## 10. Directory layout
 
 ```
@@ -286,3 +312,5 @@ Restart the process so changes take effect.
 | `upload_too_large` reply | Raise `upload_max_bytes` or set `0` to disable the local check. The Telegram Bot API hard cap is 20 MB without a self-hosted Bot API server. |
 | Claude says it cannot find the file | Confirm Claude Code's user can read `uploads_dir`. The path printed in logs (`upload saved: ... path=...`) must be reachable from `working_dir` user context. |
 | `Read` permission prompt for an uploaded file | The bot wires `uploads_dir` into `ClaudeAgentOptions(add_dirs=[...])` automatically. If you still see prompts, you either restarted before this fix or `uploads_dir` is unset — re-check `config.json` and the startup log line `uploads enabled at <path>`. |
+| Quiz buttons appear but nothing happens after click | Make sure the chat's `chat_id` is in `allowed_chat_ids` (the callback authz check rejects out-of-chat clicks). Restart if you upgraded across the AskUserQuestion patch. |
+| New message ignored while a quiz is on screen | Old behaviour. After the auto-skip patch, any new message cancels the running quiz and is processed in the same turn. Restart the bot if you are running the pre-patch build. |

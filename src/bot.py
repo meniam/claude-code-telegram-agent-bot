@@ -220,6 +220,10 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
     async def permission_callback(callback: CallbackQuery) -> None:
         await gate.handle_callback(callback)
 
+    @dp.callback_query(F.data.startswith("aq:"))
+    async def ask_user_question_callback(callback: CallbackQuery) -> None:
+        await gate.handle_aq_callback(callback)
+
     async def react_to(message: Message, text: str) -> None:
         emoji = reaction_picker.pick(text or "")
         try:
@@ -275,6 +279,7 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
             return
         cl = bot_logs.for_chat(message.chat.id)
         cl.info("user: %s", message.text)
+        await gate.cancel_active_aq(message.chat.id)
         await react_to(message, message.text)
         await reply_with_agent(message, message.text, cl)
 
@@ -283,6 +288,7 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         if not is_allowed(message.chat.id):
             await deny_access(message)
             return
+        await gate.cancel_active_aq(message.chat.id)
         cl = bot_logs.for_chat(message.chat.id)
         media = message.voice or message.audio
         if media is None:
@@ -425,6 +431,7 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         if not is_allowed(message.chat.id):
             await deny_access(message)
             return
+        await gate.cancel_active_aq(message.chat.id)
         cl = bot_logs.for_chat(message.chat.id)
         if uploads is None:
             await send_md(message, tr.t("upload_disabled"))
@@ -456,6 +463,7 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         if not is_allowed(message.chat.id):
             await deny_access(message)
             return
+        await gate.cancel_active_aq(message.chat.id)
         cl = bot_logs.for_chat(message.chat.id)
         if uploads is None:
             await send_md(message, tr.t("upload_disabled"))
@@ -490,6 +498,7 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         if not is_allowed(message.chat.id):
             await deny_access(message)
             return
+        await gate.cancel_active_aq(message.chat.id)
         cl = bot_logs.for_chat(message.chat.id)
         if uploads is None:
             await send_md(message, tr.t("upload_disabled"))

@@ -26,7 +26,7 @@ Multi-bot Telegram agent. One process can run several bots in parallel (`asyncio
 - a long-polling `aiogram` dispatcher,
 - an `AgentSessionManager` that keeps a live `ClaudeSDKClient` per `chat_id` (multi-turn context survives across messages until `/new`, the idle GC closes the session after `session_idle_ttl_sec` of inactivity, or process restart),
 - a `DraftStreamer` that animates Claude's reply via the recent `sendMessageDraft` Bot API method while tokens stream in (`include_partial_messages=True` → `text_delta` events),
-- a `TelegramPermissionGate` that turns Claude's `can_use_tool` into inline-button prompts (Allow / Deny / Always-allow-this-session) and resolves the `asyncio.Future` from a `callback_query` handler,
+- a `TelegramPermissionGate` that turns Claude's `can_use_tool` into inline-button prompts (Allow / Deny / Always-allow-this-session) and resolves the `asyncio.Future` from a `callback_query` handler. The gate also intercepts the built-in `AskUserQuestion` tool: each question is rendered as its own inline keyboard (single- or multi-select + a "Skip" button), answers are collected sequentially, then returned to Claude as a plain-text summary via `PermissionResultDeny.message` (the SDK feeds the message to the model as the tool's response). Any incoming user message — text, voice, photo, document, sticker — calls `gate.cancel_active_aq(chat_id)` to auto-skip a hanging prompt so the new message is not deadlocked behind an unanswered quiz.
 - a `BotLogs` that writes general `bot.log` and per-chat `<chat_id>.log` under `<logs_dir>/<internal_name>/`,
 - a `Translator` from `src/i18n/<lang>.json`,
 - an optional `GroqTranscriber` ([src/transcribe.py](src/transcribe.py)) that handles `voice` / `audio` messages: downloads the file via `bot.download`, posts it to Groq's `audio/transcriptions` endpoint, echoes the transcript as a Markdown blockquote, then feeds it into `agent.ask_stream` like any text message. Disabled when `groq_api_key` is unset.
@@ -59,6 +59,8 @@ File uploads: `uploads_dir` (`null` disables `photo` / `document` / `sticker` ha
 `AgentSessionManager._make_options` passes `setting_sources=["user", "project", "local"]`, so rules from `.claude/settings.json`, `.claude/settings.local.json` (in `working_dir`) and the user's global settings are honored — those tools never reach the gate.
 
 The "Always allow this session" button issues `PermissionUpdate(type="addRules", behavior="allow", destination="session")` for the specific tool. It dies with the live `ClaudeSDKClient` (i.e. on `/new` or restart). For persistent rules edit `<working_dir>/.claude/settings.local.json`.
+
+`AskUserQuestion` is special-cased in [src/permissions.py](src/permissions.py): the standard Allow/Deny/Always prompt is **not** shown for it. Instead the gate iterates over the `questions` array, posting each as an inline keyboard. Single-select question fires on the first tap; multi-select toggles between `▫️` and `☑️` until the user taps `✅ Done`. Every question also has a `⏭ Skip` button. Per-question timeout uses `approval_timeout_sec`. Result format is a plain-text block (`User responded to AskUserQuestion via Telegram inline buttons: …`) returned through `PermissionResultDeny.message` — Claude reads it as the tool result. `gate.cancel_active_aq(chat_id)` is invoked from every input handler so a fresh user message auto-skips the hanging quiz; remaining questions are tagged `(skipped)` in the summary.
 
 ## i18n
 
