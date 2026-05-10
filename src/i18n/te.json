@@ -1,0 +1,60 @@
+{
+  "start_greeting": "హాయ్. ప్రశ్న అడగండి — నేను Claude ద్వారా జవాబు ఇస్తాను.\nఆదేశాలు: /new — కొత్త Claude Code సెషన్ ప్రారంభించండి.",
+  "new_session_confirmation": "కొత్త Claude Code సెషన్ ప్రారంభమైంది. సందర్భం క్లియర్ చేయబడింది.",
+  "empty_answer": "(ఖాళీ సమాధానం)",
+  "error_prefix": "లోపం: {error}",
+  "bot_command_start": "ప్రారంభించండి",
+  "bot_command_new": "కొత్త Claude Code సెషన్",
+  "approval_timeout": "⌛ అనుమతి సమయం ముగిసింది — అభ్యర్థన తిరస్కరించబడింది.",
+  "permission_request_default_title": "Claude «{tool}» సాధనాన్ని ఉపయోగించాలనుకుంటోంది.",
+  "permission_request_reason": "కారణం: {reason}",
+  "permission_request_path": "మార్గం: {path}",
+  "permission_request_params": "పరామితులు: {params}",
+  "permission_failed_prompt": "వినియోగదారుడిని అడగడం విఫలమైంది",
+  "permission_denied_via_telegram": "వినియోగదారుడు Telegram ద్వారా తిరస్కరించారు",
+  "btn_allow": "✅ అనుమతించు",
+  "btn_deny": "🚫 తిరస్కరించు",
+  "btn_always": "♾️ ఈ సెషన్‌లో ఎల్లప్పుడూ అనుమతించు",
+  "verdict_allow": "✅ అనుమతించబడింది",
+  "verdict_deny": "🚫 తిరస్కరించబడింది",
+  "verdict_always": "♾️ ఎల్లప్పుడూ అనుమతించబడింది",
+  "callback_outdated": "అభ్యర్థన ఇకపై చురుకుగా లేదు",
+  "callback_received": "స్వీకరించబడింది",
+  "default_system_prompt": "మీరు స్నేహపూర్వక Telegram సహాయకుడు. క్లుప్తంగా జవాబు ఇవ్వండి.",
+  "access_denied": "🔒 ఈ బాట్‌కు ప్రాప్యత పరిమితం.\n\nమీ Telegram chat ID: `{chat_id}`\n\nదీన్ని బాట్ నిర్వాహకుడికి ఫార్వార్డ్ చేయండి — వారు దీన్ని `config.json`లో `allowed_chat_ids`కి జోడిస్తారు, అప్పుడు మీరు బాట్‌తో చాట్ చేయవచ్చు.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "ధన్యవాదాలు|థాంక్స్",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "లోపం|బగ్|పని చేయట్లేదు|విఫలం",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "జోక్|హాహా|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "అద్భుతం|చాలా బాగుంది|🔥|సూపర్",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "కోడ్|ఫంక్షన్|ప్రోగ్రామ్",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "బాగా చేశావు|శభాష్|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "హలో|నమస్కారం|హాయ్",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|ఎందుకు|ఎలా|వివరించు|సహాయం",
+      "emoji": "🤔"
+    }
+  ]
+}

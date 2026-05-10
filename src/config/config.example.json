@@ -1,0 +1,12 @@
+{
+    "brain": {
+        "telegram_bot_token": "put-bot-token-from-BotFather-here",
+        "allowed_chat_ids": [],
+        "system_prompt": "You are a friendly assistant. Be concise.",
+        "lang": "ru",
+        "working_dir": "/home/brain/workdir",
+        "logs_dir": "/var/log/telegram-agent-bot",
+        "draft_interval_sec": 0.2,
+        "approval_timeout_sec": 300
+    }
+}

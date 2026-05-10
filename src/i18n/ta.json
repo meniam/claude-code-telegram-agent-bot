@@ -1,0 +1,60 @@
+{
+  "start_greeting": "வணக்கம். கேள்வி கேளுங்கள் — Claude மூலம் பதிலளிப்பேன்.\nகட்டளைகள்: /new — புதிய Claude Code அமர்வைத் தொடங்கவும்.",
+  "new_session_confirmation": "புதிய Claude Code அமர்வு தொடங்கியது. சூழல் அழிக்கப்பட்டது.",
+  "empty_answer": "(காலியான பதில்)",
+  "error_prefix": "பிழை: {error}",
+  "bot_command_start": "தொடங்கு",
+  "bot_command_new": "புதிய Claude Code அமர்வு",
+  "approval_timeout": "⌛ ஒப்புதல் நேரம் முடிந்தது — கோரிக்கை நிராகரிக்கப்பட்டது.",
+  "permission_request_default_title": "Claude «{tool}» கருவியைப் பயன்படுத்த விரும்புகிறது.",
+  "permission_request_reason": "காரணம்: {reason}",
+  "permission_request_path": "பாதை: {path}",
+  "permission_request_params": "அளவுருக்கள்: {params}",
+  "permission_failed_prompt": "பயனரிடம் கேட்க முடியவில்லை",
+  "permission_denied_via_telegram": "பயனர் Telegram வழியாக நிராகரித்தார்",
+  "btn_allow": "✅ அனுமதி",
+  "btn_deny": "🚫 நிராகரி",
+  "btn_always": "♾️ இந்த அமர்வில் எப்போதும் அனுமதி",
+  "verdict_allow": "✅ அனுமதிக்கப்பட்டது",
+  "verdict_deny": "🚫 நிராகரிக்கப்பட்டது",
+  "verdict_always": "♾️ எப்போதும் அனுமதிக்கப்பட்டது",
+  "callback_outdated": "கோரிக்கை இப்போது செயலில் இல்லை",
+  "callback_received": "ஏற்கப்பட்டது",
+  "default_system_prompt": "நீங்கள் நட்பான Telegram உதவியாளர். சுருக்கமாக பதிலளியுங்கள்.",
+  "access_denied": "🔒 இந்த போட்டிற்கான அணுகல் தடைசெய்யப்பட்டது.\n\nஉங்கள் Telegram chat ID: `{chat_id}`\n\nஇதை போட் நிர்வாகியிடம் அனுப்பவும் — அவர் `config.json` இல் `allowed_chat_ids` பட்டியலில் சேர்ப்பார், பிறகு நீங்கள் போட்டுடன் அரட்டை அடிக்கலாம்.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "நன்றி|நன்றிகள்",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "பிழை|பக்|வேலை செய்யவில்லை|தோல்வி",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "ஜோக்|ஹாஹா|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "அருமை|சூப்பர்|🔥|அற்புதம்",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "கோட்|செயல்பாடு|நிரல்",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "நல்ல வேலை|பாராட்டு|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "வணக்கம்|ஹலோ|ஹாய்",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|ஏன்|எப்படி|விளக்கவும்|உதவி",
+      "emoji": "🤔"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "start_greeting": "Habari. Uliza swali — nitajibu kupitia Claude.\nAmri: /new — anza kipindi kipya cha Claude Code.",
+  "new_session_confirmation": "Kipindi kipya cha Claude Code kimeanza. Muktadha umefutwa.",
+  "empty_answer": "(jibu tupu)",
+  "error_prefix": "Hitilafu: {error}",
+  "bot_command_start": "Anza",
+  "bot_command_new": "Kipindi kipya cha Claude Code",
+  "approval_timeout": "⌛ Muda wa idhini umeisha — ombi limekataliwa.",
+  "permission_request_default_title": "Claude anataka kutumia zana «{tool}».",
+  "permission_request_reason": "Sababu: {reason}",
+  "permission_request_path": "Njia: {path}",
+  "permission_request_params": "Vigezo: {params}",
+  "permission_failed_prompt": "Imeshindwa kumuuliza mtumiaji",
+  "permission_denied_via_telegram": "Mtumiaji amekataa kupitia Telegram",
+  "btn_allow": "✅ Ruhusu",
+  "btn_deny": "🚫 Kataa",
+  "btn_always": "♾️ Ruhusu kila wakati katika kipindi hiki",
+  "verdict_allow": "✅ Imeruhusiwa",
+  "verdict_deny": "🚫 Imekataliwa",
+  "verdict_always": "♾️ Imeruhusiwa kila wakati",
+  "callback_outdated": "Ombi halifanyi kazi tena",
+  "callback_received": "Imepokelewa",
+  "default_system_prompt": "Wewe ni msaidizi wa Telegram mwenye urafiki. Jibu kwa ufupi.",
+  "access_denied": "🔒 Ufikiaji wa boti hii umezuiliwa.\n\nTelegram chat ID yako: `{chat_id}`\n\nMtumie msimamizi wa boti — ataongeza ID hiyo kwenye `allowed_chat_ids` katika `config.json`, kisha utaweza kuzungumza na boti.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "asante|shukrani",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "\\bkosa\\b|\\bbug\\b|haifanyi kazi|imeshindwa",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "utani|haha|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "nzuri sana|safi|🔥|bora",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "msimbo|\\bkazi\\b|programu",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "kazi nzuri|hongera|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "jambo|habari|hujambo|salamu",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|kwa nini|jinsi gani|elezea|saidia",
+      "emoji": "🤔"
+    }
+  ]
+}

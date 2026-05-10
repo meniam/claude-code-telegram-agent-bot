@@ -1,0 +1,60 @@
+{
+  "start_greeting": "হাই। প্রশ্ন করুন — আমি Claude-এর মাধ্যমে উত্তর দেব।\nকমান্ড: /new — নতুন Claude Code সেশন শুরু করুন।",
+  "new_session_confirmation": "নতুন Claude Code সেশন শুরু হয়েছে। প্রসঙ্গ মুছে ফেলা হয়েছে।",
+  "empty_answer": "(খালি উত্তর)",
+  "error_prefix": "ত্রুটি: {error}",
+  "bot_command_start": "শুরু করুন",
+  "bot_command_new": "নতুন Claude Code সেশন",
+  "approval_timeout": "⌛ অনুমোদনের সময় শেষ — অনুরোধ প্রত্যাখ্যান।",
+  "permission_request_default_title": "Claude «{tool}» টুল ব্যবহার করতে চায়।",
+  "permission_request_reason": "কারণ: {reason}",
+  "permission_request_path": "পথ: {path}",
+  "permission_request_params": "প্যারামিটার: {params}",
+  "permission_failed_prompt": "ব্যবহারকারীকে জিজ্ঞাসা করা যায়নি",
+  "permission_denied_via_telegram": "ব্যবহারকারী Telegram-এর মাধ্যমে অস্বীকার করেছেন",
+  "btn_allow": "✅ অনুমতি দিন",
+  "btn_deny": "🚫 প্রত্যাখ্যান",
+  "btn_always": "♾️ এই সেশনে সর্বদা অনুমতি দিন",
+  "verdict_allow": "✅ অনুমোদিত",
+  "verdict_deny": "🚫 প্রত্যাখ্যাত",
+  "verdict_always": "♾️ সর্বদা অনুমোদিত",
+  "callback_outdated": "অনুরোধ আর সক্রিয় নয়",
+  "callback_received": "গৃহীত",
+  "default_system_prompt": "আপনি একজন বন্ধুত্বপূর্ণ Telegram সহকারী। সংক্ষেপে উত্তর দিন।",
+  "access_denied": "🔒 এই বটে অ্যাক্সেস সীমাবদ্ধ।\n\nআপনার Telegram chat ID: `{chat_id}`\n\nএটি বট অ্যাডমিনিস্ট্রেটরকে ফরোয়ার্ড করুন — তিনি `config.json`-এর `allowed_chat_ids`-এ এটি যোগ করবেন, এরপর আপনি বটের সাথে চ্যাট করতে পারবেন।",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "ধন্যবাদ",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "ত্রুটি|বাগ|কাজ করছে না|সমস্যা",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "কৌতুক|হাহা|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "দারুণ|অসাধারণ|🔥|চমৎকার",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "কোড|ফাংশন|প্রোগ্রাম",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "শাবাশ|ভালো কাজ|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "হ্যালো|নমস্কার|হাই",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|কেন|কিভাবে|বুঝাও|সাহায্য",
+      "emoji": "🤔"
+    }
+  ]
+}

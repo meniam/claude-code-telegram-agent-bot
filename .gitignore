@@ -1,0 +1,15 @@
+.claude/
+.env
+config.json
+src/config/config.json
+logs/
+AUDIT.md
+promo.txt
+/bot.log
+__pycache__/
+.cursor/
+*.pyc
+.venv/
+venv/
+.idea/
+.vscode/

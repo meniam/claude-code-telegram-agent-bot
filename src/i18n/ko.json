@@ -1,0 +1,60 @@
+{
+  "start_greeting": "안녕하세요. 무엇이든 물어보세요 — Claude를 통해 답변합니다.\n명령어: /new — 새 Claude Code 세션 시작.",
+  "new_session_confirmation": "새 Claude Code 세션이 시작되었습니다. 컨텍스트가 초기화되었습니다.",
+  "empty_answer": "(빈 응답)",
+  "error_prefix": "오류: {error}",
+  "bot_command_start": "시작",
+  "bot_command_new": "새 Claude Code 세션",
+  "approval_timeout": "⌛ 승인 시간이 만료되었습니다 — 요청이 거부되었습니다.",
+  "permission_request_default_title": "Claude가 «{tool}» 도구를 사용하려고 합니다.",
+  "permission_request_reason": "이유: {reason}",
+  "permission_request_path": "경로: {path}",
+  "permission_request_params": "매개변수: {params}",
+  "permission_failed_prompt": "사용자에게 물어보지 못했습니다",
+  "permission_denied_via_telegram": "사용자가 Telegram을 통해 거부했습니다",
+  "btn_allow": "✅ 허용",
+  "btn_deny": "🚫 거부",
+  "btn_always": "♾️ 이 세션에서 항상 허용",
+  "verdict_allow": "✅ 허용됨",
+  "verdict_deny": "🚫 거부됨",
+  "verdict_always": "♾️ 항상 허용",
+  "callback_outdated": "요청이 더 이상 활성화되어 있지 않습니다",
+  "callback_received": "수신됨",
+  "default_system_prompt": "당신은 친절한 Telegram 어시스턴트입니다. 간결하게 답변하세요.",
+  "access_denied": "🔒 이 봇에 대한 접근이 제한되었습니다.\n\n당신의 Telegram chat ID: `{chat_id}`\n\n봇 관리자에게 전달하세요 — 관리자가 `config.json`의 `allowed_chat_ids`에 추가하면 봇과 대화할 수 있습니다.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "감사|고마워|땡큐",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "에러|버그|작동 안|오류|뻗었",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "농담|ㅋㅋ|하하|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "멋져|대박|최고|🔥|굿",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "코드|함수|스크립트|프로그램",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "잘했어|수고|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "안녕|반갑|좋은 (아침|저녁)",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|왜|어떻게|도와|설명",
+      "emoji": "🤔"
+    }
+  ]
+}

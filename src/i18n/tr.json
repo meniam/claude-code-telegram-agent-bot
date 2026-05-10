@@ -1,0 +1,60 @@
+{
+  "start_greeting": "Merhaba. Sorunu yaz — Claude üzerinden yanıtlıyorum.\nKomutlar: /new — yeni Claude Code oturumu başlat.",
+  "new_session_confirmation": "Yeni Claude Code oturumu başlatıldı. Bağlam temizlendi.",
+  "empty_answer": "(boş yanıt)",
+  "error_prefix": "Hata: {error}",
+  "bot_command_start": "Başla",
+  "bot_command_new": "Yeni Claude Code oturumu",
+  "approval_timeout": "⌛ Onay süresi doldu — istek reddedildi.",
+  "permission_request_default_title": "Claude «{tool}» aracını kullanmak istiyor.",
+  "permission_request_reason": "Sebep: {reason}",
+  "permission_request_path": "Yol: {path}",
+  "permission_request_params": "Parametreler: {params}",
+  "permission_failed_prompt": "Kullanıcıya sorulamadı",
+  "permission_denied_via_telegram": "Kullanıcı Telegram üzerinden reddetti",
+  "btn_allow": "✅ İzin ver",
+  "btn_deny": "🚫 Reddet",
+  "btn_always": "♾️ Bu oturumda her zaman izin ver",
+  "verdict_allow": "✅ İzin verildi",
+  "verdict_deny": "🚫 Reddedildi",
+  "verdict_always": "♾️ Her zaman izin verildi",
+  "callback_outdated": "İstek artık aktif değil",
+  "callback_received": "Alındı",
+  "default_system_prompt": "Sen dostça bir Telegram asistanısın. Kısa ve öz yanıtla.",
+  "access_denied": "🔒 Bu bota erişim kısıtlı.\n\nTelegram chat ID'n: `{chat_id}`\n\nBunu bot yöneticisine ilet — `config.json` içindeki `allowed_chat_ids` listesine ekleyecek, sonra botla sohbet edebileceksin.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "teşekkür|sağol|sağ ol|eyvallah",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "hata|\\bbug\\b|bozuk|çalışmıyor|patladı",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "şaka|haha|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "harika|süper|muhteşem|🔥",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "\\bkod\\b|fonksiyon|betik|program",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "aferin|iyi iş|tebrikler|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "merhaba|selam|günaydın|iyi (akşam|geceler)",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|neden|niçin|nasıl|yardım|açıkla",
+      "emoji": "🤔"
+    }
+  ]
+}

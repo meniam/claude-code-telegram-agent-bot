@@ -1,0 +1,60 @@
+{
+  "start_greeting": "Hai. Tanyakan apa saja — saya menjawab lewat Claude.\nPerintah: /new — mulai sesi Claude Code baru.",
+  "new_session_confirmation": "Sesi Claude Code baru dimulai. Konteks dibersihkan.",
+  "empty_answer": "(jawaban kosong)",
+  "error_prefix": "Kesalahan: {error}",
+  "bot_command_start": "Mulai",
+  "bot_command_new": "Sesi Claude Code baru",
+  "approval_timeout": "⌛ Waktu persetujuan habis — permintaan ditolak.",
+  "permission_request_default_title": "Claude ingin menggunakan alat «{tool}».",
+  "permission_request_reason": "Alasan: {reason}",
+  "permission_request_path": "Jalur: {path}",
+  "permission_request_params": "Parameter: {params}",
+  "permission_failed_prompt": "Gagal bertanya kepada pengguna",
+  "permission_denied_via_telegram": "Pengguna menolak melalui Telegram",
+  "btn_allow": "✅ Izinkan",
+  "btn_deny": "🚫 Tolak",
+  "btn_always": "♾️ Selalu izinkan di sesi ini",
+  "verdict_allow": "✅ Diizinkan",
+  "verdict_deny": "🚫 Ditolak",
+  "verdict_always": "♾️ Selalu diizinkan",
+  "callback_outdated": "Permintaan sudah tidak aktif",
+  "callback_received": "Diterima",
+  "default_system_prompt": "Kamu adalah asisten Telegram yang ramah. Jawab dengan ringkas.",
+  "access_denied": "🔒 Akses ke bot ini dibatasi.\n\nTelegram chat ID kamu: `{chat_id}`\n\nKirim ke administrator bot — dia akan menambahkannya ke `allowed_chat_ids` di `config.json`, lalu kamu bisa mengobrol dengan bot.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "terima kasih|makasih|trims",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "\\berror\\b|\\bbug\\b|rusak|tidak bekerja|gagal",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "lelucon|haha|wkwk|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "keren|hebat|mantap|🔥|luar biasa",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "\\bkode\\b|fungsi|skrip|program",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "kerja bagus|bagus sekali|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "halo|hai|selamat (pagi|siang|sore|malam)",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|kenapa|mengapa|bagaimana|jelaskan|tolong",
+      "emoji": "🤔"
+    }
+  ]
+}

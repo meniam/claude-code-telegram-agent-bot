@@ -1,0 +1,60 @@
+{
+  "start_greeting": "नमस्ते। कुछ भी पूछें — मैं Claude के ज़रिए जवाब दूँगा।\nकमांड: /new — नया Claude Code सत्र शुरू करें।",
+  "new_session_confirmation": "नया Claude Code सत्र शुरू हो गया। संदर्भ साफ़ कर दिया गया।",
+  "empty_answer": "(खाली उत्तर)",
+  "error_prefix": "त्रुटि: {error}",
+  "bot_command_start": "शुरू करें",
+  "bot_command_new": "नया Claude Code सत्र",
+  "approval_timeout": "⌛ अनुमति का समय समाप्त — अनुरोध अस्वीकृत।",
+  "permission_request_default_title": "Claude «{tool}» टूल का उपयोग करना चाहता है।",
+  "permission_request_reason": "कारण: {reason}",
+  "permission_request_path": "पथ: {path}",
+  "permission_request_params": "पैरामीटर: {params}",
+  "permission_failed_prompt": "उपयोगकर्ता से पूछना विफल",
+  "permission_denied_via_telegram": "उपयोगकर्ता ने Telegram के माध्यम से अस्वीकार किया",
+  "btn_allow": "✅ अनुमति दें",
+  "btn_deny": "🚫 अस्वीकार करें",
+  "btn_always": "♾️ इस सत्र में हमेशा अनुमति दें",
+  "verdict_allow": "✅ अनुमत",
+  "verdict_deny": "🚫 अस्वीकृत",
+  "verdict_always": "♾️ हमेशा अनुमत",
+  "callback_outdated": "अनुरोध अब सक्रिय नहीं है",
+  "callback_received": "स्वीकार किया गया",
+  "default_system_prompt": "आप एक मित्रवत Telegram सहायक हैं। संक्षेप में उत्तर दें।",
+  "access_denied": "🔒 इस बॉट तक पहुँच प्रतिबंधित है।\n\nआपका Telegram chat ID: `{chat_id}`\n\nइसे बॉट व्यवस्थापक को भेजें — वे इसे `config.json` में `allowed_chat_ids` में जोड़ देंगे, फिर आप बॉट से बात कर सकेंगे।",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "धन्यवाद|शुक्रिया",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "त्रुटि|बग|काम नहीं|खराब",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "मज़ाक|हाहा|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "कमाल|शानदार|बहुत अच्छा|🔥",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "कोड|फ़ंक्शन|प्रोग्राम|स्क्रिप्ट",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "शाबाश|बढ़िया|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "नमस्ते|हैलो|हाय",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|क्यों|कैसे|समझाओ|मदद",
+      "emoji": "🤔"
+    }
+  ]
+}

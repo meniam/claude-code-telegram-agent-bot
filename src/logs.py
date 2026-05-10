@@ -1,0 +1,108 @@
+"""Logging: global console + per-bot files.
+
+File layout:
+  <logs_dir>/<internal_name>/bot.log         — general log for this bot
+  <logs_dir>/<internal_name>/<chat_id>.log   — chat events (user/bot/errors)
+"""
+
+import logging
+import logging.handlers
+from collections import OrderedDict
+from pathlib import Path
+
+GENERAL_FMT = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+CHAT_FMT = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+MAX_BYTES = 10 * 1024 * 1024
+BACKUPS = 5
+DEFAULT_CHAT_LOGGER_CAPACITY = 256
+
+_NOOP = logging.getLogger("chat.noop")
+_NOOP.addHandler(logging.NullHandler())
+_NOOP.propagate = False
+
+
+def setup_console() -> None:
+    """Global init: log everything to console."""
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    console = logging.StreamHandler()
+    console.setFormatter(GENERAL_FMT)
+    root.addHandler(console)
+
+
+class BotLogs:
+    """Logs for a single bot: writes to <base_dir>/bot.log + per-chat files.
+
+    Chat-loggers are kept in a bounded LRU; when the cap is exceeded, the
+    least-recently-used logger is evicted: its handlers are closed (releasing
+    the file descriptor) and the logger is removed from the global registry.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        base_dir: Path | None,
+        capacity: int = DEFAULT_CHAT_LOGGER_CAPACITY,
+    ):
+        self._name = name
+        self._base = base_dir
+        self._capacity = capacity
+        self._chat_loggers: OrderedDict[int, logging.Logger] = OrderedDict()
+        self._general = logging.getLogger(f"bot.{name}")
+        self._general.setLevel(logging.INFO)
+
+        if base_dir is not None:
+            base_dir.mkdir(parents=True, exist_ok=True)
+            handler = logging.handlers.RotatingFileHandler(
+                base_dir / "bot.log",
+                maxBytes=MAX_BYTES,
+                backupCount=BACKUPS,
+                encoding="utf-8",
+            )
+            handler.setFormatter(GENERAL_FMT)
+            self._general.addHandler(handler)
+        # Keep propagate on — the shared console handler will show events from every bot.
+
+    @property
+    def general(self) -> logging.Logger:
+        return self._general
+
+    def for_chat(self, chat_id: int) -> logging.Logger:
+        if self._base is None:
+            return _NOOP
+        existing = self._chat_loggers.get(chat_id)
+        if existing is not None:
+            self._chat_loggers.move_to_end(chat_id)
+            return existing
+
+        log = logging.getLogger(f"bot.{self._name}.chat.{chat_id}")
+        log.setLevel(logging.INFO)
+        log.propagate = False
+        handler = logging.handlers.RotatingFileHandler(
+            self._base / f"{chat_id}.log",
+            maxBytes=MAX_BYTES,
+            backupCount=BACKUPS,
+            encoding="utf-8",
+        )
+        handler.setFormatter(CHAT_FMT)
+        log.addHandler(handler)
+        self._chat_loggers[chat_id] = log
+
+        while len(self._chat_loggers) > self._capacity:
+            evicted_id, evicted_log = self._chat_loggers.popitem(last=False)
+            self._evict(evicted_id, evicted_log)
+
+        return log
+
+    def _evict(self, chat_id: int, log: logging.Logger) -> None:
+        for handler in list(log.handlers):
+            try:
+                handler.close()
+            except Exception:
+                pass
+            log.removeHandler(handler)
+        logging.Logger.manager.loggerDict.pop(
+            f"bot.{self._name}.chat.{chat_id}", None
+        )

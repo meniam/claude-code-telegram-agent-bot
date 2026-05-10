@@ -1,0 +1,60 @@
+{
+  "start_greeting": "Hallo. Stell deine Frage — ich antworte über Claude.\nBefehle: /new — neue Claude-Code-Sitzung starten.",
+  "new_session_confirmation": "Neue Claude-Code-Sitzung gestartet. Kontext zurückgesetzt.",
+  "empty_answer": "(leere Antwort)",
+  "error_prefix": "Fehler: {error}",
+  "bot_command_start": "Start",
+  "bot_command_new": "Neue Claude-Code-Sitzung",
+  "approval_timeout": "⌛ Genehmigungszeit abgelaufen — Anfrage abgelehnt.",
+  "permission_request_default_title": "Claude möchte das Werkzeug «{tool}» verwenden.",
+  "permission_request_reason": "Grund: {reason}",
+  "permission_request_path": "Pfad: {path}",
+  "permission_request_params": "Parameter: {params}",
+  "permission_failed_prompt": "Benutzer konnte nicht gefragt werden",
+  "permission_denied_via_telegram": "Benutzer hat über Telegram abgelehnt",
+  "btn_allow": "✅ Erlauben",
+  "btn_deny": "🚫 Ablehnen",
+  "btn_always": "♾️ In dieser Sitzung immer erlauben",
+  "verdict_allow": "✅ Erlaubt",
+  "verdict_deny": "🚫 Abgelehnt",
+  "verdict_always": "♾️ Immer erlaubt",
+  "callback_outdated": "Anfrage ist nicht mehr aktiv",
+  "callback_received": "Angenommen",
+  "default_system_prompt": "Du bist ein freundlicher Telegram-Assistent. Antworte knapp.",
+  "access_denied": "🔒 Der Zugriff auf diesen Bot ist eingeschränkt.\n\nDeine Telegram-Chat-ID: `{chat_id}`\n\nLeite sie an den Bot-Administrator weiter — er fügt sie in `config.json` zu `allowed_chat_ids` hinzu, danach kannst du mit dem Bot chatten.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "danke|vielen dank|merci",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "fehler|\\bbug\\b|kaputt|funktioniert nicht|abgestürzt",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "witz|haha|hihi|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "super|toll|großartig|🔥|stark",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "\\bcode\\b|funktion|skript|programm",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "gut gemacht|super arbeit|bravo|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "hallo|guten (tag|morgen|abend)|servus|moin",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|warum|wieso|\\bwie\\b|hilfe|erkläre",
+      "emoji": "🤔"
+    }
+  ]
+}

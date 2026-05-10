@@ -1,0 +1,60 @@
+{
+  "start_greeting": "Chào bạn. Hãy hỏi gì đó — tôi trả lời qua Claude.\nLệnh: /new — bắt đầu phiên Claude Code mới.",
+  "new_session_confirmation": "Đã bắt đầu phiên Claude Code mới. Đã xoá ngữ cảnh.",
+  "empty_answer": "(phản hồi rỗng)",
+  "error_prefix": "Lỗi: {error}",
+  "bot_command_start": "Bắt đầu",
+  "bot_command_new": "Phiên Claude Code mới",
+  "approval_timeout": "⌛ Đã hết thời gian phê duyệt — yêu cầu bị từ chối.",
+  "permission_request_default_title": "Claude muốn sử dụng công cụ «{tool}».",
+  "permission_request_reason": "Lý do: {reason}",
+  "permission_request_path": "Đường dẫn: {path}",
+  "permission_request_params": "Tham số: {params}",
+  "permission_failed_prompt": "Không thể hỏi người dùng",
+  "permission_denied_via_telegram": "Người dùng đã từ chối qua Telegram",
+  "btn_allow": "✅ Cho phép",
+  "btn_deny": "🚫 Từ chối",
+  "btn_always": "♾️ Luôn cho phép trong phiên này",
+  "verdict_allow": "✅ Đã cho phép",
+  "verdict_deny": "🚫 Đã từ chối",
+  "verdict_always": "♾️ Luôn cho phép",
+  "callback_outdated": "Yêu cầu không còn hiệu lực",
+  "callback_received": "Đã nhận",
+  "default_system_prompt": "Bạn là trợ lý Telegram thân thiện. Trả lời ngắn gọn.",
+  "access_denied": "🔒 Quyền truy cập bot này bị hạn chế.\n\nTelegram chat ID của bạn: `{chat_id}`\n\nChuyển tiếp ID này cho quản trị viên bot — họ sẽ thêm vào `allowed_chat_ids` trong `config.json`, sau đó bạn có thể trò chuyện với bot.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "cảm ơn|cám ơn|cảm tạ",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "lỗi|\\bbug\\b|hỏng|không hoạt động|sập",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "chuyện cười|haha|kk|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "tuyệt|tuyệt vời|đỉnh|🔥|xuất sắc",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "\\bmã\\b|hàm|kịch bản|chương trình",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "làm tốt|giỏi quá|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "xin chào|\\bchào\\b|chào buổi (sáng|chiều|tối)",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|tại sao|làm sao|giúp|giải thích",
+      "emoji": "🤔"
+    }
+  ]
+}

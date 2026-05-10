@@ -1,0 +1,60 @@
+{
+  "start_greeting": "Hola. Pregúntame lo que quieras — respondo a través de Claude.\nComandos: /new — iniciar una nueva sesión de Claude Code.",
+  "new_session_confirmation": "Nueva sesión de Claude Code iniciada. Contexto limpiado.",
+  "empty_answer": "(respuesta vacía)",
+  "error_prefix": "Error: {error}",
+  "bot_command_start": "Empezar",
+  "bot_command_new": "Nueva sesión de Claude Code",
+  "approval_timeout": "⌛ Tiempo de aprobación agotado — solicitud denegada.",
+  "permission_request_default_title": "Claude quiere usar la herramienta «{tool}».",
+  "permission_request_reason": "Razón: {reason}",
+  "permission_request_path": "Ruta: {path}",
+  "permission_request_params": "Parámetros: {params}",
+  "permission_failed_prompt": "No se pudo preguntar al usuario",
+  "permission_denied_via_telegram": "Usuario denegó vía Telegram",
+  "btn_allow": "✅ Permitir",
+  "btn_deny": "🚫 Denegar",
+  "btn_always": "♾️ Permitir siempre en esta sesión",
+  "verdict_allow": "✅ Permitido",
+  "verdict_deny": "🚫 Denegado",
+  "verdict_always": "♾️ Permitido siempre",
+  "callback_outdated": "La solicitud ya no está activa",
+  "callback_received": "Aceptado",
+  "default_system_prompt": "Eres un asistente amigable de Telegram. Responde de forma concisa.",
+  "access_denied": "🔒 El acceso a este bot está restringido.\n\nTu chat ID de Telegram: `{chat_id}`\n\nReenvíalo al administrador del bot — lo añadirá a `allowed_chat_ids` en `config.json`, y luego podrás chatear con el bot.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "gracias|mil gracias",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "\\berror\\b|\\bbug\\b|roto|no funciona|fallo|caído",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "chiste|jaja|jeje|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "increíble|genial|asombroso|🔥|brutal",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "código|función|script|programa",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "buen trabajo|bien hecho|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "\\bhola\\b|buenos (días|tardes|noches)",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|\\¿|por qué|cómo|ayuda|explica",
+      "emoji": "🤔"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "start_greeting": "ہیلو۔ کچھ بھی پوچھیں — میں Claude کے ذریعے جواب دوں گا۔\nکمانڈز: /new — نیا Claude Code سیشن شروع کریں۔",
+  "new_session_confirmation": "نیا Claude Code سیشن شروع ہو گیا۔ سیاق و سباق صاف کر دیا گیا۔",
+  "empty_answer": "(خالی جواب)",
+  "error_prefix": "خرابی: {error}",
+  "bot_command_start": "شروع کریں",
+  "bot_command_new": "نیا Claude Code سیشن",
+  "approval_timeout": "⌛ منظوری کا وقت ختم — درخواست مسترد۔",
+  "permission_request_default_title": "Claude «{tool}» ٹول استعمال کرنا چاہتا ہے۔",
+  "permission_request_reason": "وجہ: {reason}",
+  "permission_request_path": "راستہ: {path}",
+  "permission_request_params": "پیرامیٹرز: {params}",
+  "permission_failed_prompt": "صارف سے پوچھنا ناکام",
+  "permission_denied_via_telegram": "صارف نے Telegram کے ذریعے انکار کیا",
+  "btn_allow": "✅ اجازت دیں",
+  "btn_deny": "🚫 انکار کریں",
+  "btn_always": "♾️ اس سیشن میں ہمیشہ اجازت دیں",
+  "verdict_allow": "✅ اجازت دی گئی",
+  "verdict_deny": "🚫 مسترد",
+  "verdict_always": "♾️ ہمیشہ اجازت",
+  "callback_outdated": "درخواست اب فعال نہیں",
+  "callback_received": "موصول ہوگیا",
+  "default_system_prompt": "آپ ایک دوستانہ Telegram اسسٹنٹ ہیں۔ مختصر جواب دیں۔",
+  "access_denied": "🔒 اس بوٹ تک رسائی محدود ہے۔\n\nآپ کا Telegram chat ID: `{chat_id}`\n\nاسے بوٹ ایڈمنسٹریٹر کو فارورڈ کریں — وہ اسے `config.json` میں `allowed_chat_ids` میں شامل کریں گے، پھر آپ بوٹ سے بات کر سکیں گے۔",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "شکریہ|مہربانی",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "غلطی|بگ|کام نہیں|خراب",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "مذاق|ہاہا|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "زبردست|شاندار|🔥|بہترین",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "کوڈ|پروگرام|اسکرپٹ",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "شاباش|اچھا کام|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "ہیلو|سلام|آداب",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\؟|\\?|کیوں|کیسے|سمجھاؤ|مدد",
+      "emoji": "🤔"
+    }
+  ]
+}

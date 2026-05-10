@@ -1,0 +1,60 @@
+{
+  "start_greeting": "こんにちは。質問してください — Claude を通じて回答します。\nコマンド: /new — 新しい Claude Code セッションを開始。",
+  "new_session_confirmation": "新しい Claude Code セッションを開始しました。コンテキストはクリアされました。",
+  "empty_answer": "(空の応答)",
+  "error_prefix": "エラー: {error}",
+  "bot_command_start": "開始",
+  "bot_command_new": "新しい Claude Code セッション",
+  "approval_timeout": "⌛ 承認がタイムアウトしました — リクエストは拒否されました。",
+  "permission_request_default_title": "Claude が「{tool}」ツールの使用を要求しています。",
+  "permission_request_reason": "理由: {reason}",
+  "permission_request_path": "パス: {path}",
+  "permission_request_params": "パラメータ: {params}",
+  "permission_failed_prompt": "ユーザーへの問い合わせに失敗しました",
+  "permission_denied_via_telegram": "ユーザーが Telegram で拒否しました",
+  "btn_allow": "✅ 許可",
+  "btn_deny": "🚫 拒否",
+  "btn_always": "♾️ このセッションで常に許可",
+  "verdict_allow": "✅ 許可済み",
+  "verdict_deny": "🚫 拒否済み",
+  "verdict_always": "♾️ 常に許可",
+  "callback_outdated": "リクエストはすでに無効です",
+  "callback_received": "受け取りました",
+  "default_system_prompt": "あなたはフレンドリーな Telegram アシスタントです。簡潔に回答してください。",
+  "access_denied": "🔒 このボットへのアクセスは制限されています。\n\nあなたの Telegram chat ID: `{chat_id}`\n\nボット管理者に転送してください — 彼が `config.json` の `allowed_chat_ids` に ID を追加すれば、ボットと会話できるようになります。",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "ありがとう|感謝|どうも",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "エラー|バグ|動かない|不具合|落ちた",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "冗談|ハハ|笑|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "すごい|素晴らしい|やばい|🔥|最高",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "コード|関数|スクリプト|プログラム",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "よくやった|お疲れ|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "こんにちは|やあ|おはよう|こんばんは",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|？|なぜ|どう|教えて|助けて",
+      "emoji": "🤔"
+    }
+  ]
+}

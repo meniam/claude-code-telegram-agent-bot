@@ -1,0 +1,60 @@
+{
+  "start_greeting": "Salut. Pose ta question — je réponds via Claude.\nCommandes : /new — démarrer une nouvelle session Claude Code.",
+  "new_session_confirmation": "Nouvelle session Claude Code démarrée. Contexte effacé.",
+  "empty_answer": "(réponse vide)",
+  "error_prefix": "Erreur : {error}",
+  "bot_command_start": "Démarrer",
+  "bot_command_new": "Nouvelle session Claude Code",
+  "approval_timeout": "⌛ Délai d'approbation expiré — demande refusée.",
+  "permission_request_default_title": "Claude souhaite utiliser l'outil «{tool}».",
+  "permission_request_reason": "Raison : {reason}",
+  "permission_request_path": "Chemin : {path}",
+  "permission_request_params": "Paramètres : {params}",
+  "permission_failed_prompt": "Impossible de demander à l'utilisateur",
+  "permission_denied_via_telegram": "Utilisateur a refusé via Telegram",
+  "btn_allow": "✅ Autoriser",
+  "btn_deny": "🚫 Refuser",
+  "btn_always": "♾️ Toujours autoriser dans cette session",
+  "verdict_allow": "✅ Autorisé",
+  "verdict_deny": "🚫 Refusé",
+  "verdict_always": "♾️ Toujours autorisé",
+  "callback_outdated": "La demande n'est plus active",
+  "callback_received": "Accepté",
+  "default_system_prompt": "Tu es un assistant Telegram amical. Réponds de manière concise.",
+  "access_denied": "🔒 L'accès à ce bot est restreint.\n\nTon chat ID Telegram : `{chat_id}`\n\nTransfère-le à l'administrateur du bot — il l'ajoutera à `allowed_chat_ids` dans `config.json`, et tu pourras ensuite discuter avec le bot.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "merci|merci beaucoup",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "erreur|\\bbug\\b|cassé|ne marche pas|panne|plante",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "blague|haha|hihi|mdr|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "génial|super|incroyable|🔥|excellent",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "\\bcode\\b|fonction|script|programme",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "bien joué|bon travail|bravo|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "bonjour|salut|bonsoir|coucou",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|pourquoi|comment|aide|explique",
+      "emoji": "🤔"
+    }
+  ]
+}

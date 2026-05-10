@@ -1,0 +1,60 @@
+{
+  "start_greeting": "مرحبًا. اطرح سؤالك — سأجيب عبر Claude.\nالأوامر: /new — بدء جلسة Claude Code جديدة.",
+  "new_session_confirmation": "تم بدء جلسة Claude Code جديدة. تم مسح السياق.",
+  "empty_answer": "(رد فارغ)",
+  "error_prefix": "خطأ: {error}",
+  "bot_command_start": "ابدأ",
+  "bot_command_new": "جلسة Claude Code جديدة",
+  "approval_timeout": "⌛ انتهت مهلة الموافقة — تم رفض الطلب.",
+  "permission_request_default_title": "يريد Claude استخدام أداة «{tool}».",
+  "permission_request_reason": "السبب: {reason}",
+  "permission_request_path": "المسار: {path}",
+  "permission_request_params": "المعاملات: {params}",
+  "permission_failed_prompt": "تعذر سؤال المستخدم",
+  "permission_denied_via_telegram": "رفض المستخدم عبر Telegram",
+  "btn_allow": "✅ سماح",
+  "btn_deny": "🚫 رفض",
+  "btn_always": "♾️ السماح دائمًا في هذه الجلسة",
+  "verdict_allow": "✅ مسموح",
+  "verdict_deny": "🚫 مرفوض",
+  "verdict_always": "♾️ مسموح دائمًا",
+  "callback_outdated": "الطلب لم يعد نشطًا",
+  "callback_received": "تم القبول",
+  "default_system_prompt": "أنت مساعد Telegram ودود. أجب باختصار.",
+  "access_denied": "🔒 الوصول إلى هذا البوت مقيد.\n\nمعرف الدردشة الخاص بك في Telegram: `{chat_id}`\n\nأعد توجيهه إلى مسؤول البوت — سيقوم بإضافته إلى `allowed_chat_ids` في `config.json`، وبعدها ستتمكن من الدردشة مع البوت.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "شكرا|شكراً|أشكرك",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "خطأ|عطل|لا يعمل|تعطل",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "نكتة|هاها|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "رائع|ممتاز|عظيم|🔥",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "كود|دالة|برنامج|سكربت",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "أحسنت|عمل جيد|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "مرحبا|أهلا|السلام عليكم",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\؟|\\?|لماذا|كيف|اشرح|ساعد",
+      "emoji": "🤔"
+    }
+  ]
+}

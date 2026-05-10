@@ -1,0 +1,60 @@
+{
+  "start_greeting": "नमस्कार. प्रश्न विचारा — मी Claude द्वारे उत्तर देईन.\nआज्ञा: /new — नवीन Claude Code सत्र सुरू करा.",
+  "new_session_confirmation": "नवीन Claude Code सत्र सुरू झाले. संदर्भ साफ केला.",
+  "empty_answer": "(रिकामे उत्तर)",
+  "error_prefix": "त्रुटी: {error}",
+  "bot_command_start": "सुरू करा",
+  "bot_command_new": "नवीन Claude Code सत्र",
+  "approval_timeout": "⌛ मंजुरीची वेळ संपली — विनंती नाकारली.",
+  "permission_request_default_title": "Claude ला «{tool}» साधन वापरायचे आहे.",
+  "permission_request_reason": "कारण: {reason}",
+  "permission_request_path": "मार्ग: {path}",
+  "permission_request_params": "पॅरामीटर्स: {params}",
+  "permission_failed_prompt": "वापरकर्त्याला विचारणे अयशस्वी",
+  "permission_denied_via_telegram": "वापरकर्त्याने Telegram द्वारे नकार दिला",
+  "btn_allow": "✅ परवानगी द्या",
+  "btn_deny": "🚫 नकार द्या",
+  "btn_always": "♾️ या सत्रात नेहमी परवानगी द्या",
+  "verdict_allow": "✅ अनुमत",
+  "verdict_deny": "🚫 नाकारले",
+  "verdict_always": "♾️ नेहमी अनुमत",
+  "callback_outdated": "विनंती आता सक्रिय नाही",
+  "callback_received": "स्वीकारले",
+  "default_system_prompt": "तुम्ही एक मैत्रीपूर्ण Telegram सहाय्यक आहात. थोडक्यात उत्तर द्या.",
+  "access_denied": "🔒 या बॉटवर प्रवेश प्रतिबंधित आहे.\n\nतुमचा Telegram chat ID: `{chat_id}`\n\nते बॉट प्रशासकाला फॉरवर्ड करा — ते `config.json` मध्ये `allowed_chat_ids` मध्ये जोडतील, नंतर तुम्ही बॉटशी बोलू शकाल.",
+  "default_reaction": "👀",
+  "reactions": [
+    {
+      "pattern": "धन्यवाद|आभार",
+      "emoji": "❤"
+    },
+    {
+      "pattern": "त्रुटी|बग|काम करत नाही|बिघाड",
+      "emoji": "🤯"
+    },
+    {
+      "pattern": "विनोद|हाहा|🤣|😂",
+      "emoji": "😁"
+    },
+    {
+      "pattern": "मस्त|छान|🔥|भारी",
+      "emoji": "🔥"
+    },
+    {
+      "pattern": "कोड|फंक्शन|प्रोग्राम",
+      "emoji": "👨‍💻"
+    },
+    {
+      "pattern": "शाब्बास|छान काम|👏",
+      "emoji": "👏"
+    },
+    {
+      "pattern": "नमस्कार|हाय|हॅलो",
+      "emoji": "🤝"
+    },
+    {
+      "pattern": "\\?|का|कसे|समजाव|मदत",
+      "emoji": "🤔"
+    }
+  ]
+}
