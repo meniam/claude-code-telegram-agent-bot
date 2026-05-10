@@ -20,6 +20,7 @@ from .permissions import TelegramPermissionGate
 from .reactions import ReactionPicker
 from .streaming import DraftStreamer
 from .transcribe import GroqTranscriber, TranscriptionError
+from .uploads import PendingFile, UploadStore, format_attachment_prompt
 
 TG_LIMIT = 4000
 
@@ -125,19 +126,27 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
     tr = Translator(cfg.lang)
     system_prompt = cfg.system_prompt or tr.t("default_system_prompt")
     reaction_picker = ReactionPicker.from_translator(tr)
-    # None → open to everyone; () → closed; (..) → whitelist.
-    allowed_set: set[int] | None
-    allowed_set = None if cfg.allowed_chat_ids is None else set(cfg.allowed_chat_ids)
+    # Fail-closed gate. Order: blacklist → allowed_for_all → whitelist.
+    allowed_set: set[int] = set(cfg.allowed_chat_ids)
+    blacklist_set: set[int] = set(cfg.blacklist_chat_ids)
 
     def is_allowed(chat_id: int) -> bool:
-        return allowed_set is None or chat_id in allowed_set
+        if chat_id in blacklist_set:
+            return False
+        if cfg.allowed_for_all:
+            return True
+        return chat_id in allowed_set
 
-    if allowed_set is not None:
+    if cfg.allowed_for_all:
+        glog.warning("[%s] access: OPEN TO EVERYONE (allowed_for_all=true)", cfg.name)
+    else:
         glog.info(
             "[%s] access restricted to %d chat_id(s)",
             cfg.name,
             len(allowed_set),
         )
+    if blacklist_set:
+        glog.info("[%s] blacklist: %d chat_id(s)", cfg.name, len(blacklist_set))
 
     dp = Dispatcher()
     streamer = DraftStreamer(
@@ -148,11 +157,15 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
     gate = TelegramPermissionGate(
         bot, translator=tr, approval_timeout_sec=cfg.approval_timeout_sec
     )
+    add_dirs: list[str] = []
+    if cfg.uploads_dir:
+        add_dirs.append(cfg.uploads_dir)
     agent = AgentSessionManager(
         on_permission=gate.can_use_tool,
         system_prompt=system_prompt,
         cwd=cfg.working_dir,
         idle_ttl_sec=cfg.session_idle_ttl_sec,
+        add_dirs=add_dirs,
     )
 
     transcriber: GroqTranscriber | None = None
@@ -164,6 +177,20 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
             timeout_sec=cfg.groq_timeout_sec,
         )
         glog.info("[%s] groq transcription enabled (model=%s)", cfg.name, cfg.groq_model)
+
+    uploads: UploadStore | None = None
+    if cfg.uploads_dir:
+        uploads = UploadStore(Path(cfg.uploads_dir))
+        glog.info("[%s] uploads enabled at %s", cfg.name, uploads.base_dir)
+
+    # Per-album debounce: a single Telegram album arrives as N separate
+    # `photo` / `document` updates with the same `media_group_id`. We hold a
+    # short timer per media_group_id, restarting it on every arrival, so the
+    # agent fires once after the album is fully delivered. Captions can land
+    # on any one of the album's items — collect them here.
+    album_timers: dict[str, asyncio.Task[None]] = {}
+    album_captions: dict[str, str] = {}
+    ALBUM_DEBOUNCE_SEC = 1.5
 
     async def deny_access(message: Message) -> None:
         bot_logs.for_chat(message.chat.id).warning(
@@ -207,6 +234,15 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
     async def reply_with_agent(
         message: Message, prompt: str, cl: logging.Logger
     ) -> None:
+        if uploads is not None:
+            pending = uploads.pop_pending(message.chat.id)
+            if pending:
+                cl.info(
+                    "draining %d pending upload(s): %s",
+                    len(pending),
+                    ", ".join(str(p.path) for p in pending),
+                )
+                prompt = format_attachment_prompt(pending, prompt)
         await bot.send_chat_action(message.chat.id, "typing")
         try:
             chunks = agent.ask_stream(message.chat.id, prompt)
@@ -298,6 +334,197 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         )
         await react_to(message, transcript)
         await reply_with_agent(message, transcript, cl)
+
+    async def _save_upload(
+        message: Message,
+        file_id: str,
+        original_name: str,
+        kind: str,
+        cl: logging.Logger,
+        size_hint: int | None,
+    ) -> PendingFile | None:
+        """Download a Telegram file into the per-chat uploads dir.
+
+        Returns the resulting PendingFile or None on a handled error
+        (caller has already replied to the user)."""
+        assert uploads is not None  # caller checked
+        if (
+            cfg.upload_max_bytes > 0
+            and size_hint is not None
+            and size_hint > cfg.upload_max_bytes
+        ):
+            await send_md(
+                message,
+                tr.t(
+                    "upload_too_large",
+                    size_mb=size_hint / 1024 / 1024,
+                    limit_mb=cfg.upload_max_bytes / 1024 / 1024,
+                ),
+            )
+            return None
+        path = uploads.build_path(message.chat.id, file_id, original_name)
+        try:
+            with path.open("wb") as f:
+                await bot.download(file_id, destination=f)
+        except Exception as e:
+            glog.exception("[%s] upload download failed", cfg.name)
+            cl.exception("upload download failed: %s", e)
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+            await send_md(message, tr.t("upload_error", error=type(e).__name__))
+            return None
+        cl.info(
+            "upload saved: kind=%s name=%s path=%s size=%s",
+            kind,
+            original_name,
+            path,
+            path.stat().st_size,
+        )
+        return PendingFile(path=path, kind=kind, name=original_name)
+
+    async def _fire_for_upload(message: Message, cl: logging.Logger) -> None:
+        """Fire the agent on the just-saved upload.
+
+        Single message → fire immediately. Album (`media_group_id` set) →
+        debounce: every additional album item resets the timer, so the
+        agent runs once after the album is fully delivered. Caption from
+        any item in the album is preserved.
+        """
+        caption = (message.caption or "").strip()
+        mg = message.media_group_id
+        if not mg:
+            await react_to(message, caption)
+            await reply_with_agent(message, caption, cl)
+            return
+        if caption:
+            album_captions[mg] = caption
+        existing = album_timers.get(mg)
+        if existing is not None and not existing.done():
+            existing.cancel()
+
+        async def _delayed() -> None:
+            try:
+                await asyncio.sleep(ALBUM_DEBOUNCE_SEC)
+            except asyncio.CancelledError:
+                return
+            album_timers.pop(mg, None)
+            cap = album_captions.pop(mg, "")
+            cl.info("album %s: firing with caption=%r", mg, cap)
+            try:
+                await react_to(message, cap)
+                await reply_with_agent(message, cap, cl)
+            except Exception:
+                glog.exception("[%s] album fire failed", cfg.name)
+
+        album_timers[mg] = asyncio.create_task(_delayed())
+
+    @dp.message(F.photo)
+    async def handle_photo(message: Message) -> None:
+        if not is_allowed(message.chat.id):
+            await deny_access(message)
+            return
+        cl = bot_logs.for_chat(message.chat.id)
+        if uploads is None:
+            await send_md(message, tr.t("upload_disabled"))
+            return
+        photo = message.photo[-1]  # largest available size
+        cl.info(
+            "photo: file_id=%s size=%sx%s bytes=%s media_group=%s",
+            photo.file_id,
+            photo.width,
+            photo.height,
+            photo.file_size,
+            message.media_group_id,
+        )
+        item = await _save_upload(
+            message,
+            photo.file_id,
+            "photo.jpg",
+            "image",
+            cl,
+            photo.file_size,
+        )
+        if item is None:
+            return
+        uploads.add_pending(message.chat.id, item)
+        await _fire_for_upload(message, cl)
+
+    @dp.message(F.document)
+    async def handle_document(message: Message) -> None:
+        if not is_allowed(message.chat.id):
+            await deny_access(message)
+            return
+        cl = bot_logs.for_chat(message.chat.id)
+        if uploads is None:
+            await send_md(message, tr.t("upload_disabled"))
+            return
+        doc = message.document
+        if doc is None:
+            return
+        original_name = doc.file_name or "document"
+        cl.info(
+            "document: file_id=%s name=%s mime=%s size=%s media_group=%s",
+            doc.file_id,
+            original_name,
+            doc.mime_type,
+            doc.file_size,
+            message.media_group_id,
+        )
+        item = await _save_upload(
+            message,
+            doc.file_id,
+            original_name,
+            "document",
+            cl,
+            doc.file_size,
+        )
+        if item is None:
+            return
+        uploads.add_pending(message.chat.id, item)
+        await _fire_for_upload(message, cl)
+
+    @dp.message(F.sticker)
+    async def handle_sticker(message: Message) -> None:
+        if not is_allowed(message.chat.id):
+            await deny_access(message)
+            return
+        cl = bot_logs.for_chat(message.chat.id)
+        if uploads is None:
+            await send_md(message, tr.t("upload_disabled"))
+            return
+        sticker = message.sticker
+        if sticker is None:
+            return
+        if sticker.is_animated:
+            ext, kind = ".tgs", "binary (animated sticker, Lottie JSON)"
+        elif sticker.is_video:
+            ext, kind = ".webm", "binary (video sticker)"
+        else:
+            # Static stickers are plain WebP images — Claude can Read them.
+            ext, kind = ".webp", "image"
+        name = f"sticker_{sticker.set_name or 'unknown'}{ext}"
+        cl.info(
+            "sticker: file_id=%s set=%s emoji=%s kind=%s size=%s",
+            sticker.file_id,
+            sticker.set_name,
+            sticker.emoji,
+            kind,
+            sticker.file_size,
+        )
+        item = await _save_upload(
+            message,
+            sticker.file_id,
+            name,
+            kind,
+            cl,
+            sticker.file_size,
+        )
+        if item is None:
+            return
+        uploads.add_pending(message.chat.id, item)
+        await _fire_for_upload(message, cl)
 
     await bot.set_my_commands([
         BotCommand(command="start", description=tr.t("bot_command_start")),

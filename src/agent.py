@@ -29,12 +29,14 @@ class AgentSessionManager:
         on_permission: PermissionCallback | None = None,
         system_prompt: str = "You are a friendly Telegram assistant. Reply concisely.",
         cwd: str | None = None,
-        idle_ttl_sec: int = 3600,
+        idle_ttl_sec: int = 86400,
+        add_dirs: list[str] | None = None,
     ):
         self._on_permission = on_permission
         self._system_prompt = system_prompt
         self._cwd = cwd
         self._idle_ttl = idle_ttl_sec
+        self._add_dirs = list(add_dirs) if add_dirs else []
         # chat_id -> (client, last_used_monotonic_ts)
         self._clients: dict[int, tuple[ClaudeSDKClient, float]] = {}
         self._locks: dict[int, asyncio.Lock] = {}
@@ -99,6 +101,7 @@ class AgentSessionManager:
             include_partial_messages=True,
             can_use_tool=can_use_tool,
             cwd=self._cwd,
+            add_dirs=list(self._add_dirs),
             setting_sources=["user", "project", "local"],
         )
 

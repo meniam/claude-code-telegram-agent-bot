@@ -30,6 +30,7 @@ Multi-bot Telegram agent. One process can run several bots in parallel (`asyncio
 - a `BotLogs` that writes general `bot.log` and per-chat `<chat_id>.log` under `<logs_dir>/<internal_name>/`,
 - a `Translator` from `src/i18n/<lang>.json`,
 - an optional `GroqTranscriber` ([src/transcribe.py](src/transcribe.py)) that handles `voice` / `audio` messages: downloads the file via `bot.download`, posts it to Groq's `audio/transcriptions` endpoint, echoes the transcript as a Markdown blockquote, then feeds it into `agent.ask_stream` like any text message. Disabled when `groq_api_key` is unset.
+- an optional `UploadStore` ([src/uploads.py](src/uploads.py)) that handles `photo` / `document` / `sticker` messages: saves them under `<uploads_dir>/<chat_id>/<ts>_<file_id>_<name>` and fires the agent immediately. A subsequent text or voice message also drains anything still in the queue. Albums (`media_group_id`) are debounced ~1.5 s so a single agent turn handles all items at once; the caption from any album item is preserved. Prompt to Claude is built by `format_attachment_prompt(...)` — Claude gets the absolute paths and is told to use the `Read` tool. The configured `uploads_dir` is forwarded to `ClaudeAgentOptions(add_dirs=[...])`, so Claude's `Read` works without a permission prompt on paths outside `working_dir`. Stickers branch by type — static WebP → `kind="image"` (Claude reads it as a regular image), animated `.tgs` (Lottie) and video `.webm` are saved with `kind="binary (...)"` so Claude knows it cannot decode them visually. Disabled when `uploads_dir` is unset.
 
 Entry point [src/bot.py](src/bot.py) wires those together and registers handlers. The final response is converted from Markdown to Telegram MarkdownV2 via `telegramify-markdown`, with a small pre-pass that inserts a blank line after closing fenced code blocks. Long replies are split into ≤4000-char chunks; a chunk that fails MarkdownV2 parsing falls back to plain text.
 
@@ -37,19 +38,21 @@ Entry point [src/bot.py](src/bot.py) wires those together and registers handlers
 
 `src/config/config.json` is a top-level dict `<internal_name>: BotConfig`. Loader [src/config/__init__.py](src/config/__init__.py) accepts the legacy flat format too — it gets wrapped under name `default`. Token can be overridden via env `TELEGRAM_BOT_TOKEN_<INTERNAL_NAME>`.
 
-`allowed_chat_ids` semantics — keep them straight when editing:
+Access control is **fail-closed**. Three fields drive it; `is_allowed` evaluates them in this order:
 
-- `null` / missing → open to everyone
-- `[]` → closed to everyone (every chat gets the refusal containing its own `chat_id`)
-- `[id, ...]` → whitelist
+1. `blacklist_chat_ids: tuple[int, ...]` (default `()`). If the sender is here, deny outright. Beats `allowed_for_all` and the whitelist.
+2. `allowed_for_all: bool` (default `false`). When `true` every non-blacklisted chat passes. Logged as a warning on startup. Only enable for genuinely public bots.
+3. `allowed_chat_ids: tuple[int, ...]` (default `()`). When `allowed_for_all` is `false`, only chats in this list are accepted. `null`, missing field and `[]` all mean **nobody is allowed** — every message gets the refusal containing the sender's `chat_id`.
 
 `system_prompt: null` falls back to translation key `default_system_prompt` for the configured `lang`.
 
 `logs_dir: null` → console-only logging; otherwise rotating file handlers (10 MB × 5) under `<logs_dir>/<internal_name>/`.
 
-Other tunables on `BotConfig` ([src/config/__init__.py](src/config/__init__.py)): `draft_interval_sec` (0.2), `approval_timeout_sec` (300), `agent_timeout_sec` (180, hard cap per Claude turn), `session_idle_ttl_sec` (3600, idle GC; `0` disables), `chat_logger_capacity` (256, LRU cap on per-chat file loggers).
+Other tunables on `BotConfig` ([src/config/__init__.py](src/config/__init__.py)): `draft_interval_sec` (0.2), `approval_timeout_sec` (300), `agent_timeout_sec` (180, hard cap per Claude turn), `session_idle_ttl_sec` (86400 = 24h, idle GC; `0` disables), `chat_logger_capacity` (256, LRU cap on per-chat file loggers).
 
 Voice transcription (Groq): `groq_api_key` (env override `GROQ_API_KEY_<INTERNAL_NAME>`, then `GROQ_API_KEY`; `null` disables the voice handler), `groq_model` (default `whisper-large-v3-turbo`), `groq_timeout_sec` (60), `voice_max_duration_sec` (600, `0` disables the cap).
+
+File uploads: `uploads_dir` (`null` disables `photo` / `document` / `sticker` handlers — the bot replies with `upload_disabled`), `upload_max_bytes` (20 MB default; `0` disables the cap; the upstream Bot API caps downloads at 20 MB without a self-hosted Bot API server anyway). When set, the directory is also passed to the SDK as `add_dirs`, so files saved there are reachable by `Read` without permission prompts.
 
 ## Permissions
 

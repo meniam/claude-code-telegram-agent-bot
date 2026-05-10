@@ -41,8 +41,13 @@ class TelegramPermissionGate:
         self._bot = bot
         self._t = translator
         self._timeout = approval_timeout_sec
-        # request_id -> (Future with decision: "allow" | "deny" | "always", tool_name, expected_chat_id)
-        self._pending: dict[str, tuple[asyncio.Future[str], str, int]] = {}
+        # request_id -> (Future with decision, tool_name, expected_chat_id, prompt_message_id)
+        # prompt_message_id is None until the inline-button message is sent
+        # successfully; we use it to delete the prompt on click / timeout so
+        # the chat does not pile up with stale permission requests.
+        self._pending: dict[
+            str, tuple[asyncio.Future[str], str, int, int | None]
+        ] = {}
 
     async def can_use_tool(
         self,
@@ -55,7 +60,7 @@ class TelegramPermissionGate:
         request_id = secrets.token_hex(8)
         loop = asyncio.get_running_loop()
         fut: asyncio.Future[str] = loop.create_future()
-        self._pending[request_id] = (fut, tool_name, chat_id)
+        self._pending[request_id] = (fut, tool_name, chat_id, None)
 
         text = self._format_request(tool_name, tool_input, ctx)
         kb = InlineKeyboardMarkup(
@@ -80,18 +85,22 @@ class TelegramPermissionGate:
         )
 
         try:
-            await self._bot.send_message(
+            sent = await self._bot.send_message(
                 chat_id, text, reply_markup=kb, parse_mode=None
             )
         except Exception:
             log.exception("permission prompt failed")
             self._pending.pop(request_id, None)
             return PermissionResultDeny(message=t.t("permission_failed_prompt"))
+        self._pending[request_id] = (fut, tool_name, chat_id, sent.message_id)
 
         decision = "deny"
         try:
             decision = await asyncio.wait_for(fut, timeout=self._timeout)
         except asyncio.TimeoutError:
+            # Drop the stale prompt before announcing the timeout so the
+            # chat does not keep an orphaned set of buttons around.
+            await self._delete_prompt(chat_id, sent.message_id)
             try:
                 await self._bot.send_message(
                     chat_id, t.t("approval_timeout"), parse_mode=None
@@ -132,14 +141,16 @@ class TelegramPermissionGate:
         entry = self._pending.get(request_id)
         if entry is None or entry[0].done():
             await callback.answer(t.t("callback_outdated"), show_alert=False)
+            # Outdated prompt — delete it so the chat does not accumulate
+            # orphaned button rows.
             if msg is not None:
                 try:
-                    await msg.edit_reply_markup(reply_markup=None)
+                    await msg.delete()
                 except Exception:
                     pass
             return
 
-        fut, _tool_name, expected_chat_id = entry
+        fut, _tool_name, expected_chat_id, _prompt_msg_id = entry
 
         # Authz: only callbacks from the chat the request was issued to are honored.
         actual_chat_id = msg.chat.id if msg is not None else None
@@ -154,12 +165,20 @@ class TelegramPermissionGate:
         fut.set_result(decision)
 
         verdict = t.t(f"verdict_{decision}")
+        # Delete the prompt message itself — verdict goes in the callback
+        # toast, so there is no need to keep the bubble.
         if msg is not None:
             try:
-                await msg.edit_reply_markup(reply_markup=None)
+                await msg.delete()
             except Exception:
-                log.debug("could not strip permission keyboard", exc_info=True)
+                log.debug("could not delete permission prompt", exc_info=True)
         await callback.answer(verdict)
+
+    async def _delete_prompt(self, chat_id: int, message_id: int) -> None:
+        try:
+            await self._bot.delete_message(chat_id, message_id)
+        except Exception:
+            log.debug("could not delete permission prompt", exc_info=True)
 
     def _format_request(
         self,

@@ -24,7 +24,7 @@ class BotConfig(BaseModel):
     draft_interval_sec: float = 0.2
     approval_timeout_sec: int = 300
     agent_timeout_sec: int = 180
-    session_idle_ttl_sec: int = 3600
+    session_idle_ttl_sec: int = 86400
     chat_logger_capacity: int = 256
     working_dir: str | None = None
     logs_dir: str | None = None
@@ -36,11 +36,21 @@ class BotConfig(BaseModel):
     groq_timeout_sec: float = 60.0
     # Reject audio longer than this (seconds). 0 disables the check.
     voice_max_duration_sec: int = 600
-    # Whitelist of Telegram chat IDs allowed to talk to the bot.
-    # None / missing  → no restriction (open to everyone).
-    # ()              → closed to everyone (whitelist explicitly empty).
-    # (id, id, ...)   → only listed chats are allowed.
-    allowed_chat_ids: tuple[int, ...] | None = None
+    # File / photo upload storage. None disables both handlers — the bot
+    # responds with `upload_disabled` and the file is dropped.
+    uploads_dir: str | None = None
+    # Reject uploads larger than this (bytes). 0 disables the check.
+    # Telegram Bot API caps downloads at 20 MB without a local Bot API server.
+    upload_max_bytes: int = 20 * 1024 * 1024
+    # Fail-closed access control. Evaluation order in `is_allowed`:
+    #   1. `blacklist_chat_ids` — if the sender is here, deny outright.
+    #      Takes priority over `allowed_for_all` and `allowed_chat_ids`.
+    #   2. `allowed_for_all=True` — every non-blacklisted chat is allowed.
+    #   3. otherwise — accept only chats listed in `allowed_chat_ids`.
+    #      Default is the empty tuple, i.e. nobody is allowed.
+    allowed_for_all: bool = False
+    allowed_chat_ids: tuple[int, ...] = ()
+    blacklist_chat_ids: tuple[int, ...] = ()
 
     @field_validator("lang", mode="before")
     @classmethod
@@ -80,20 +90,34 @@ def _build(name: str, data: dict) -> BotConfig:
         ld.mkdir(parents=True, exist_ok=True)
         logs_dir = str(ld.resolve())
 
-    raw_allowed = data.get("allowed_chat_ids", None)
-    allowed_chat_ids: tuple[int, ...] | None
-    if raw_allowed is None:
-        allowed_chat_ids = None
-    elif isinstance(raw_allowed, list):
+    uploads_dir = data.get("uploads_dir")
+    if uploads_dir:
+        ud = Path(uploads_dir).expanduser()
+        ud.mkdir(parents=True, exist_ok=True)
+        uploads_dir = str(ud.resolve())
+
+    def _parse_chat_id_list(field: str) -> tuple[int, ...]:
+        raw = data.get(field, None)
+        if raw is None:
+            return ()
+        if not isinstance(raw, list):
+            raise ValueError(
+                f"[{name}] {field} must be null or a list of integers"
+            )
         try:
-            allowed_chat_ids = tuple(int(x) for x in raw_allowed)
+            return tuple(int(x) for x in raw)
         except (TypeError, ValueError) as e:
             raise ValueError(
-                f"[{name}] allowed_chat_ids must contain integer chat IDs"
+                f"[{name}] {field} must contain integer chat IDs"
             ) from e
-    else:
+
+    allowed_chat_ids = _parse_chat_id_list("allowed_chat_ids")
+    blacklist_chat_ids = _parse_chat_id_list("blacklist_chat_ids")
+
+    raw_for_all = data.get("allowed_for_all", False)
+    if not isinstance(raw_for_all, bool):
         raise ValueError(
-            f"[{name}] allowed_chat_ids must be null or a list of integers"
+            f"[{name}] allowed_for_all must be a boolean"
         )
 
     payload: dict[str, Any] = {
@@ -102,7 +126,10 @@ def _build(name: str, data: dict) -> BotConfig:
         "system_prompt": data.get("system_prompt"),
         "working_dir": working_dir,
         "logs_dir": logs_dir,
+        "uploads_dir": uploads_dir,
         "allowed_chat_ids": allowed_chat_ids,
+        "blacklist_chat_ids": blacklist_chat_ids,
+        "allowed_for_all": raw_for_all,
     }
     if raw_groq:
         payload["groq_api_key"] = raw_groq
@@ -116,6 +143,7 @@ def _build(name: str, data: dict) -> BotConfig:
         "groq_model",
         "groq_timeout_sec",
         "voice_max_duration_sec",
+        "upload_max_bytes",
     ):
         if key in data:
             payload[key] = data[key]

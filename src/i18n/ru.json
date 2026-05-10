@@ -30,6 +30,10 @@
   "voice_empty": "🎙 Не удалось распознать речь в аудио.",
   "voice_too_long": "🎙 Аудио длиннее {seconds} с — пропущено.",
   "voice_error": "🎙 Ошибка распознавания: {error}",
+  "upload_disabled": "📎 Загрузка файлов не настроена: укажи `uploads_dir` в config.json.",
+  "upload_pending": "📎 Файл сохранён. Опиши что с ним сделать в следующем сообщении.",
+  "upload_too_large": "📎 Файл слишком большой: {size_mb:.1f} МБ > лимит {limit_mb:.1f} МБ.",
+  "upload_error": "📎 Не удалось сохранить файл: {error}",
   "default_reaction": "👀",
   "reactions": [
     {"pattern": "спасиб|благодар", "emoji": "❤"},

@@ -30,6 +30,10 @@
   "voice_empty": "🎙 Could not detect any speech in the audio.",
   "voice_too_long": "🎙 Audio longer than {seconds}s — skipped.",
   "voice_error": "🎙 Transcription error: {error}",
+  "upload_disabled": "📎 File uploads are not configured: set `uploads_dir` in config.json.",
+  "upload_pending": "📎 File saved. Describe what to do with it in the next message.",
+  "upload_too_large": "📎 File too large: {size_mb:.1f} MB > limit {limit_mb:.1f} MB.",
+  "upload_error": "📎 Failed to save file: {error}",
   "default_reaction": "👀",
   "reactions": [
     {"pattern": "thanks|thank you|\\bthx\\b|appreciate", "emoji": "❤"},
