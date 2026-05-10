@@ -4,6 +4,7 @@ config.json
 src/config/config.json
 logs/
 uploads/
+commands/
 AUDIT.md
 promo.txt
 /bot.log

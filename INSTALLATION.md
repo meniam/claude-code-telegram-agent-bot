@@ -89,6 +89,7 @@ Open `src/config/config.json` and fill in at least one section:
 | `voice_max_duration_sec` | Reject voice/audio longer than this (seconds). Default `600`. `0` disables the cap. |
 | `uploads_dir` | Directory for incoming `photo` / `document` / `sticker` files. `null` / missing → uploads are disabled. The path is also forwarded to `ClaudeAgentOptions(add_dirs=[...])` so Claude's `Read` works without a permission prompt. |
 | `upload_max_bytes` | Reject uploads larger than this (bytes). Default `20971520` (20 MB). `0` disables the local check. |
+| `commands_dir` | Directory with `*.md` files defining user slash commands. Missing field / `null` → no extra commands. A non-existent directory raises a startup error. See section 10 and [COMMANDS.md](COMMANDS.md). |
 
 `internal_name` is the top-level key (`brain` in the example). The log subdirectory is named after it.
 
@@ -255,7 +256,37 @@ Per-question timeout reuses `approval_timeout_sec` (default 300 s). On expiry th
 
 Sending any new message (text / voice / photo / document / sticker) while a quiz is mid-flight auto-skips the rest of the questions — the old turn finishes immediately and the new message is processed. This avoids a deadlock when you start typing a follow-up instead of clicking a stale button.
 
-## 10. Directory layout
+## 10. Custom slash commands (optional)
+
+Drop a directory of `*.md` files anywhere readable, point `commands_dir` at it, and every file becomes a Telegram bot command whose body is sent to Claude as the user prompt. Full reference: [COMMANDS.md](COMMANDS.md).
+
+Example `commands/recall.md`:
+
+```markdown
+---
+name: recall
+description: Search project memory for relevant entries
+---
+Search handoff / decisions / archive for anything related to: $ARGUMENTS
+Quote at most 3 lines per match and link the source.
+```
+
+When the user types `/recall vector store decision`, the body's `$ARGUMENTS` is replaced with `vector store decision` and the resulting prompt is sent to Claude. Without arguments `$ARGUMENTS` is replaced with an empty string.
+
+Frontmatter rules:
+
+- `name` (optional, defaults to file stem). Must be 1–32 chars, lowercase letters / digits / `_`, starting with a letter. Names that clash with built-ins (`start`, `new`) are skipped with a warning.
+- `description` (optional, defaults to `name`). Trimmed to 256 chars (the Telegram limit).
+- Only the leading `--- ... ---` block is parsed. Body is everything after the closing `---`.
+
+Loading:
+
+- Discovery is `*.md` flat (no recursion). Run with `commands_dir` writable to whoever edits files; Claude does not need access to it.
+- Files are loaded **once at startup**. Restart the bot to pick up edits.
+- Bad files (invalid name, empty body, parse error) are skipped with a `WARNING` in `bot.log`. The rest still load.
+- Commands appear in the Telegram menu (`/`), alongside `/start` and `/new`.
+
+## 11. Directory layout
 
 ```
 agent-bot/
@@ -268,6 +299,7 @@ agent-bot/
 │   ├── reactions.py        # keyword → emoji reactions
 │   ├── transcribe.py       # GroqTranscriber (voice/audio → text)
 │   ├── uploads.py          # UploadStore: saves photos/documents + per-chat queue
+│   ├── commands.py         # *.md → Telegram slash commands
 │   ├── logs.py             # BotLogs: bot.log + per-chat files
 │   ├── config/
 │   │   ├── __init__.py     # BotConfig, load()
@@ -284,7 +316,7 @@ agent-bot/
 └── .gitignore
 ```
 
-## 11. Updating
+## 12. Updating
 
 ```bash
 git pull

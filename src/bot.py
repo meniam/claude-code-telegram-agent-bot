@@ -8,11 +8,12 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.types import BotCommand, CallbackQuery, Message, ReactionTypeEmoji
 from telegramify_markdown import markdownify
 
 from .agent import AgentSessionManager
+from .commands import CommandDef, load_commands
 from .config import BotConfig, load as load_config
 from .i18n import Translator
 from .logs import BotLogs, setup_console
@@ -271,6 +272,45 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         final = answer.strip() or tr.t("empty_answer")
         cl.info("bot: %s", final)
         await send_md(message, final)
+
+    # User-defined slash commands from `commands_dir`. Registered BEFORE the
+    # generic `F.text` handler so `/<name>` is routed to the custom prompt
+    # instead of being treated as a literal user message.
+    commands: list[CommandDef] = []
+    if cfg.commands_dir:
+        commands = load_commands(Path(cfg.commands_dir))
+        glog.info(
+            "[%s] loaded %d custom command(s) from %s",
+            cfg.name,
+            len(commands),
+            cfg.commands_dir,
+        )
+
+    def _make_command_handler(template: str, cmd_name: str):
+        async def handler(message: Message, command: CommandObject) -> None:
+            if not is_allowed(message.chat.id):
+                await deny_access(message)
+                return
+            cl = bot_logs.for_chat(message.chat.id)
+            args = (command.args or "").strip()
+            prompt = template.replace("$ARGUMENTS", args)
+            cl.info(
+                "/%s args=%r -> %s",
+                cmd_name,
+                args,
+                prompt[:200].replace("\n", " ⏎ "),
+            )
+            await gate.cancel_active_aq(message.chat.id)
+            await react_to(message, prompt)
+            await reply_with_agent(message, prompt, cl)
+
+        return handler
+
+    for cmd in commands:
+        dp.message.register(
+            _make_command_handler(cmd.body, cmd.name),
+            Command(cmd.name),
+        )
 
     @dp.message(F.text)
     async def handle(message: Message) -> None:
@@ -538,6 +578,10 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
     await bot.set_my_commands([
         BotCommand(command="start", description=tr.t("bot_command_start")),
         BotCommand(command="new", description=tr.t("bot_command_new")),
+        *[
+            BotCommand(command=c.name, description=c.description)
+            for c in commands
+        ],
     ])
 
     try:

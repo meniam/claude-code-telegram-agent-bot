@@ -20,6 +20,7 @@ Each chat gets its own live `ClaudeSDKClient` session, so Claude remembers conte
 - **Working directory from config** — `working_dir` is forwarded to `ClaudeAgentOptions(cwd=...)`, so Claude operates in the desired folder.
 - **Settings sources** — the SDK loads permissions from `user`/`project`/`local` Claude Code settings (e.g. `.claude/settings.local.json` inside `cwd`), so tools whitelisted there never reach the gate.
 - **Bot commands** registered in the Telegram menu (`/start`, `/new`).
+- **User-defined slash commands** — drop `*.md` files into `commands_dir` to expose them as Telegram bot commands. Each file has a `name` / `description` frontmatter and a body; the body is sent to Claude as the user prompt when someone types `/<name>`, with `$ARGUMENTS` replaced by whatever the user typed after the command. Lets you wire up reusable workflows (`/recall`, `/today`, `/capture`, …) without code changes. Full reference: [COMMANDS.md](COMMANDS.md).
 - **i18n** — UI strings (buttons, greetings, permission prompts, default `system_prompt`) live in `src/i18n/<lang>.json`. Per-bot `lang` field in config picks a translation. Bundled (top-20 world languages): `en`, `zh`, `hi`, `es`, `ar`, `fr`, `bn`, `pt`, `ru`, `ur`, `id`, `de`, `ja`, `sw`, `mr`, `te`, `tr`, `ta`, `vi`, `ko`. Custom `system_prompt` overrides the default and controls Claude's reply language directly.
 - **Access control** — `allowed_chat_ids` per bot. `null`/missing = open to everyone, `[]` = closed to everyone, list of IDs = whitelist. Outsiders get their own `chat_id` plus instructions to forward it to the admin.
 - **Multiple bots in one process** — `config.json` accepts a `<internal_name>: <bot_config>` map; every entry runs concurrently via `asyncio.gather` with its own token / `working_dir` / `system_prompt` / `logs_dir`.
@@ -102,6 +103,7 @@ Format: top-level is a `<internal_name>: <bot_config>` map. Every key is launche
 | `voice_max_duration_sec` | Reject voice/audio longer than this (seconds). Default `600`. Set `0` to disable the cap. |
 | `uploads_dir`          | Directory where incoming `photo` / `document` / `sticker` files are saved. `null` / missing → all three handlers respond with `upload_disabled`. Files land under `<uploads_dir>/<chat_id>/<timestamp>_<file_id>_<name>`. The path is also forwarded to `ClaudeAgentOptions(add_dirs=[...])` so Claude's `Read` works without a permission prompt. |
 | `upload_max_bytes`     | Reject uploads larger than this (bytes). Default `20971520` (20 MB — the Telegram Bot API hard cap). `0` disables the local check. |
+| `commands_dir`         | Directory with `*.md` files describing user-defined Telegram slash commands. `null` / missing → no extra commands. A non-existent directory triggers a startup error. |
 
 ### Access control semantics
 
@@ -145,6 +147,7 @@ You should see `Run polling for bot @your_bot_name` in the logs. Open the bot in
 - any text — a question for Claude. The bot reacts to your message, streams the response via draft, then sends the final MarkdownV2 message.
 - voice / audio message — transcribed via Groq, the transcript is echoed as a blockquote, and the same agent flow runs on the recognized text. Requires `groq_api_key`.
 - photo / document / sticker — saved to `uploads_dir` and the agent runs right away. The caption (if any) acts as the user prompt. Static `.webp` stickers are treated as images; animated `.tgs` / video `.webm` stickers are saved but Claude can only see the path. Albums are coalesced into a single agent turn. Requires `uploads_dir`.
+- any `/<name>` listed in `commands_dir` — the file's body is sent to Claude as the prompt, with `$ARGUMENTS` replaced by whatever followed the command (`/<name> some text` → `$ARGUMENTS = "some text"`). See [COMMANDS.md](COMMANDS.md).
 
 ## Layout
 
@@ -155,6 +158,7 @@ You should see `Run polling for bot @your_bot_name` in the logs. Open the bot in
 - [src/reactions.py](src/reactions.py) — keyword → emoji rules for reactions on incoming messages.
 - [src/transcribe.py](src/transcribe.py) — `GroqTranscriber`: async POST to Groq's OpenAI-compatible `audio/transcriptions` endpoint.
 - [src/uploads.py](src/uploads.py) — `UploadStore`: per-chat file save dir + pending-attachments queue, plus the `format_attachment_prompt` helper that prepends file paths to the next prompt.
+- [src/commands.py](src/commands.py) — `load_commands`: reads `*.md` files from `commands_dir`, parses `--- name / description ---` frontmatter, returns `CommandDef`s used by `bot.py` to register Telegram slash commands.
 - [src/config/__init__.py](src/config/__init__.py) — `BotConfig` dataclass, `src/config/config.json` loader (multi-bot format with backward compatibility).
 - [src/config/config.example.json](src/config/config.example.json) — config template.
 - [src/logs.py](src/logs.py) — `BotLogs`: general `bot.log` + per-chat files.

@@ -42,6 +42,10 @@ class BotConfig(BaseModel):
     # Reject uploads larger than this (bytes). 0 disables the check.
     # Telegram Bot API caps downloads at 20 MB without a local Bot API server.
     upload_max_bytes: int = 20 * 1024 * 1024
+    # Directory with user-defined slash commands (`*.md`). Each file becomes
+    # a Telegram bot command whose body is sent to Claude as the prompt.
+    # `null` / missing → no extra commands.
+    commands_dir: str | None = None
     # Fail-closed access control. Evaluation order in `is_allowed`:
     #   1. `blacklist_chat_ids` — if the sender is here, deny outright.
     #      Takes priority over `allowed_for_all` and `allowed_chat_ids`.
@@ -96,6 +100,15 @@ def _build(name: str, data: dict) -> BotConfig:
         ud.mkdir(parents=True, exist_ok=True)
         uploads_dir = str(ud.resolve())
 
+    commands_dir = data.get("commands_dir")
+    if commands_dir:
+        cd = Path(commands_dir).expanduser()
+        if not cd.is_dir():
+            raise ValueError(
+                f"[{name}] commands_dir does not exist or is not a directory: {cd}"
+            )
+        commands_dir = str(cd.resolve())
+
     def _parse_chat_id_list(field: str) -> tuple[int, ...]:
         raw = data.get(field, None)
         if raw is None:
@@ -127,6 +140,7 @@ def _build(name: str, data: dict) -> BotConfig:
         "working_dir": working_dir,
         "logs_dir": logs_dir,
         "uploads_dir": uploads_dir,
+        "commands_dir": commands_dir,
         "allowed_chat_ids": allowed_chat_ids,
         "blacklist_chat_ids": blacklist_chat_ids,
         "allowed_for_all": raw_for_all,
