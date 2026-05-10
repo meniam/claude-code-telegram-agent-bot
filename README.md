@@ -9,6 +9,7 @@ Each chat gets its own live `ClaudeSDKClient` session, so Claude remembers conte
 ## Features
 
 - **Multi-turn dialog per chat_id** — every chat owns a live Claude session; context persists between messages.
+- **Voice / audio transcription via Groq** — `voice` and `audio` Telegram messages are downloaded, sent to Groq's `audio/transcriptions` endpoint (Whisper-class models), echoed back as a Markdown blockquote, then fed into the agent flow as if the user had typed the transcript. Disabled when `groq_api_key` is unset.
 - **Streaming response** via the recent `sendMessageDraft` Bot API method — while Claude is generating, the user sees an animated draft that grows token by token (`include_partial_messages=True`, parsed `text_delta` events).
 - **Final reply in MarkdownV2** — converted via `telegramify-markdown`, split into chunks ≤ 4000 chars, falls back to plain text when the parser chokes. A blank line is automatically inserted after fenced code blocks.
 - **Link previews disabled** globally (`link_preview_is_disabled=True`).
@@ -91,6 +92,10 @@ Format: top-level is a `<internal_name>: <bot_config>` map. Every key is launche
 | `agent_timeout_sec`    | Hard timeout per Claude turn (seconds). Default `180`.                                                                                                                                                                                                                    |
 | `session_idle_ttl_sec` | Idle TTL for a per-chat `ClaudeSDKClient`. A background GC closes clients with no traffic for that long; the next message opens a fresh session (context lost). Default `3600`. Set `0` to disable.                                                                       |
 | `chat_logger_capacity` | Max number of per-chat file loggers cached in memory (LRU). Default `256`.                                                                                                                                                                                                |
+| `groq_api_key`         | Groq API key for voice/audio transcription. `null` / missing → voice handler replies with `voice_disabled`. Override via env `GROQ_API_KEY_<INTERNAL_NAME>` or fallback `GROQ_API_KEY`. |
+| `groq_model`           | Whisper model on Groq. Default `whisper-large-v3-turbo` (faster / cheaper). Use `whisper-large-v3` for higher quality. |
+| `groq_timeout_sec`     | HTTP timeout for the transcription call. Default `60.0`. |
+| `voice_max_duration_sec` | Reject voice/audio longer than this (seconds). Default `600`. Set `0` to disable the cap. |
 
 ### `allowed_chat_ids` semantics
 
@@ -124,6 +129,7 @@ You should see `Run polling for bot @your_bot_name` in the logs. Open the bot in
 - `/start` — greeting.
 - `/new` — start a fresh Claude Code session for the current chat (the live `ClaudeSDKClient` is closed, context and session-level allow rules are dropped).
 - any text — a question for Claude. The bot reacts to your message, streams the response via draft, then sends the final MarkdownV2 message.
+- voice / audio message — transcribed via Groq, the transcript is echoed as a blockquote, and the same agent flow runs on the recognized text. Requires `groq_api_key`.
 
 ## Layout
 
@@ -132,6 +138,7 @@ You should see `Run polling for bot @your_bot_name` in the logs. Open the bot in
 - [src/streaming.py](src/streaming.py) — `DraftStreamer`: throttled `sendMessageDraft` via direct HTTP POST to the Bot API.
 - [src/permissions.py](src/permissions.py) — `TelegramPermissionGate`: inline Allow/Deny/Always buttons, `asyncio.Future` per request_id, timeout.
 - [src/reactions.py](src/reactions.py) — keyword → emoji rules for reactions on incoming messages.
+- [src/transcribe.py](src/transcribe.py) — `GroqTranscriber`: async POST to Groq's OpenAI-compatible `audio/transcriptions` endpoint.
 - [src/config/__init__.py](src/config/__init__.py) — `BotConfig` dataclass, `src/config/config.json` loader (multi-bot format with backward compatibility).
 - [src/config/config.example.json](src/config/config.example.json) — config template.
 - [src/logs.py](src/logs.py) — `BotLogs`: general `bot.log` + per-chat files.
@@ -145,6 +152,7 @@ You should see `Run polling for bot @your_bot_name` in the logs. Open the bot in
 - **Long replies** are automatically split into chunks of 4000 chars (Telegram limit is 4096).
 - **Permission mode** is not set — defaults apply. Tools not covered by `setting_sources` go through the gate. For fully autonomous mode you can set `permission_mode="bypassPermissions"` in `_make_options` (but it disables every check).
 - **"Always allow"** is session-scoped (until `/new`, idle GC, or restart). Persistent rules belong in `.claude/settings.local.json` inside `working_dir`.
+- **Voice transcription** uses Groq's OpenAI-compatible API. Get a key at [console.groq.com](https://console.groq.com/keys). Supported audio formats are decided by the upstream service (currently flac/mp3/mp4/m4a/ogg/wav/webm/flac). Telegram `voice` notes are OGG/Opus → "voice.ogg"; `audio` files reuse their original `file_name`/`mime_type` if available.
 
 ## License
 

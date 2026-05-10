@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from .logs import BotLogs, setup_console
 from .permissions import TelegramPermissionGate
 from .reactions import ReactionPicker
 from .streaming import DraftStreamer
+from .transcribe import GroqTranscriber, TranscriptionError
 
 TG_LIMIT = 4000
 
@@ -56,6 +58,40 @@ async def send_md(message: Message, text: str) -> None:
             await message.answer(chunk, parse_mode=ParseMode.MARKDOWN_V2)
         except TelegramBadRequest:
             await message.answer(chunk, parse_mode=None)
+
+
+_AUDIO_EXT_BY_MIME = {
+    "audio/mpeg": ".mp3",
+    "audio/mp3": ".mp3",
+    "audio/mp4": ".m4a",
+    "audio/x-m4a": ".m4a",
+    "audio/aac": ".m4a",
+    "audio/ogg": ".ogg",
+    "audio/opus": ".ogg",
+    "audio/wav": ".wav",
+    "audio/x-wav": ".wav",
+    "audio/webm": ".webm",
+    "audio/flac": ".flac",
+}
+
+
+def _audio_filename(message: Message) -> str:
+    """Pick a filename with an extension Groq can dispatch by."""
+    if message.voice is not None:
+        return "voice.ogg"
+    audio = message.audio
+    if audio is not None:
+        if audio.file_name:
+            return audio.file_name
+        ext = _AUDIO_EXT_BY_MIME.get((audio.mime_type or "").lower(), ".ogg")
+        return f"audio{ext}"
+    return "audio.ogg"
+
+
+def _format_quote(text: str) -> str:
+    """Wrap each line with a Markdown blockquote prefix."""
+    lines = text.splitlines() or [""]
+    return "\n".join(f"> {line}" if line else ">" for line in lines)
 
 
 async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
@@ -119,6 +155,16 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         idle_ttl_sec=cfg.session_idle_ttl_sec,
     )
 
+    transcriber: GroqTranscriber | None = None
+    if cfg.groq_api_key is not None:
+        transcriber = GroqTranscriber(
+            http,
+            api_key=cfg.groq_api_key.get_secret_value(),
+            model=cfg.groq_model,
+            timeout_sec=cfg.groq_timeout_sec,
+        )
+        glog.info("[%s] groq transcription enabled (model=%s)", cfg.name, cfg.groq_model)
+
     async def deny_access(message: Message) -> None:
         bot_logs.for_chat(message.chat.id).warning(
             "access denied for chat_id=%s user=%s",
@@ -147,14 +193,8 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
     async def permission_callback(callback: CallbackQuery) -> None:
         await gate.handle_callback(callback)
 
-    @dp.message(F.text)
-    async def handle(message: Message) -> None:
-        if not is_allowed(message.chat.id):
-            await deny_access(message)
-            return
-        cl = bot_logs.for_chat(message.chat.id)
-        cl.info("user: %s", message.text)
-        emoji = reaction_picker.pick(message.text or "")
+    async def react_to(message: Message, text: str) -> None:
+        emoji = reaction_picker.pick(text or "")
         try:
             await bot.set_message_reaction(
                 chat_id=message.chat.id,
@@ -164,9 +204,12 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         except Exception:
             glog.exception("[%s] reaction failed", cfg.name)
 
+    async def reply_with_agent(
+        message: Message, prompt: str, cl: logging.Logger
+    ) -> None:
         await bot.send_chat_action(message.chat.id, "typing")
         try:
-            chunks = agent.ask_stream(message.chat.id, message.text)
+            chunks = agent.ask_stream(message.chat.id, prompt)
             answer = await asyncio.wait_for(
                 streamer.stream(message.chat.id, chunks),
                 timeout=cfg.agent_timeout_sec,
@@ -188,6 +231,73 @@ async def run_bot(cfg: BotConfig, http: aiohttp.ClientSession) -> None:
         final = answer.strip() or tr.t("empty_answer")
         cl.info("bot: %s", final)
         await send_md(message, final)
+
+    @dp.message(F.text)
+    async def handle(message: Message) -> None:
+        if not is_allowed(message.chat.id):
+            await deny_access(message)
+            return
+        cl = bot_logs.for_chat(message.chat.id)
+        cl.info("user: %s", message.text)
+        await react_to(message, message.text)
+        await reply_with_agent(message, message.text, cl)
+
+    @dp.message(F.voice | F.audio)
+    async def handle_voice(message: Message) -> None:
+        if not is_allowed(message.chat.id):
+            await deny_access(message)
+            return
+        cl = bot_logs.for_chat(message.chat.id)
+        media = message.voice or message.audio
+        if media is None:
+            return
+        cl.info(
+            "voice: file_id=%s duration=%ss mime=%s",
+            media.file_id,
+            getattr(media, "duration", None),
+            getattr(media, "mime_type", None),
+        )
+        if transcriber is None:
+            await send_md(message, tr.t("voice_disabled"))
+            return
+        duration = getattr(media, "duration", 0) or 0
+        if cfg.voice_max_duration_sec > 0 and duration > cfg.voice_max_duration_sec:
+            await send_md(
+                message, tr.t("voice_too_long", seconds=cfg.voice_max_duration_sec)
+            )
+            return
+
+        await bot.send_chat_action(message.chat.id, "typing")
+        try:
+            buf = io.BytesIO()
+            await bot.download(media.file_id, destination=buf)
+            audio_bytes = buf.getvalue()
+            transcript = await transcriber.transcribe(
+                audio_bytes,
+                filename=_audio_filename(message),
+            )
+        except (TranscriptionError, aiohttp.ClientError, asyncio.TimeoutError) as e:
+            glog.warning("[%s] transcription failed: %s", cfg.name, e)
+            cl.warning("transcription failed: %s", e)
+            await send_md(message, tr.t("voice_error", error=str(e)[:200]))
+            return
+        except Exception as e:
+            glog.exception("[%s] transcription error", cfg.name)
+            cl.exception("transcription error: %s", e)
+            await send_md(message, tr.t("voice_error", error=type(e).__name__))
+            return
+
+        if not transcript:
+            await send_md(message, tr.t("voice_empty"))
+            return
+
+        cl.info("transcript: %s", transcript)
+        await send_md(
+            message,
+            f"{tr.t('voice_recognized')}:\n{_format_quote(transcript)}",
+        )
+        await react_to(message, transcript)
+        await reply_with_agent(message, transcript, cl)
 
     await bot.set_my_commands([
         BotCommand(command="start", description=tr.t("bot_command_start")),

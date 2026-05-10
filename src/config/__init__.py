@@ -29,6 +29,13 @@ class BotConfig(BaseModel):
     working_dir: str | None = None
     logs_dir: str | None = None
     lang: str = "ru"
+    # Voice/audio transcription via Groq. None disables the feature; the
+    # voice handler then replies with `voice_disabled`.
+    groq_api_key: SecretStr | None = None
+    groq_model: str = "whisper-large-v3-turbo"
+    groq_timeout_sec: float = 60.0
+    # Reject audio longer than this (seconds). 0 disables the check.
+    voice_max_duration_sec: int = 600
     # Whitelist of Telegram chat IDs allowed to talk to the bot.
     # None / missing  → no restriction (open to everyone).
     # ()              → closed to everyone (whitelist explicitly empty).
@@ -49,6 +56,14 @@ def _build(name: str, data: dict) -> BotConfig:
         raise ValueError(
             f"[{name}] telegram_bot_token is missing (or still a placeholder)."
         )
+
+    raw_groq = (
+        data.get("groq_api_key")
+        or os.environ.get(f"GROQ_API_KEY_{name.upper()}")
+        or os.environ.get("GROQ_API_KEY")
+    )
+    if raw_groq and str(raw_groq).startswith("put-"):
+        raw_groq = None
 
     working_dir = data.get("working_dir")
     if working_dir:
@@ -89,6 +104,8 @@ def _build(name: str, data: dict) -> BotConfig:
         "logs_dir": logs_dir,
         "allowed_chat_ids": allowed_chat_ids,
     }
+    if raw_groq:
+        payload["groq_api_key"] = raw_groq
     for key in (
         "draft_interval_sec",
         "approval_timeout_sec",
@@ -96,6 +113,9 @@ def _build(name: str, data: dict) -> BotConfig:
         "session_idle_ttl_sec",
         "chat_logger_capacity",
         "lang",
+        "groq_model",
+        "groq_timeout_sec",
+        "voice_max_duration_sec",
     ):
         if key in data:
             payload[key] = data[key]

@@ -28,7 +28,8 @@ Multi-bot Telegram agent. One process can run several bots in parallel (`asyncio
 - a `DraftStreamer` that animates Claude's reply via the recent `sendMessageDraft` Bot API method while tokens stream in (`include_partial_messages=True` → `text_delta` events),
 - a `TelegramPermissionGate` that turns Claude's `can_use_tool` into inline-button prompts (Allow / Deny / Always-allow-this-session) and resolves the `asyncio.Future` from a `callback_query` handler,
 - a `BotLogs` that writes general `bot.log` and per-chat `<chat_id>.log` under `<logs_dir>/<internal_name>/`,
-- a `Translator` from `src/i18n/<lang>.json`.
+- a `Translator` from `src/i18n/<lang>.json`,
+- an optional `GroqTranscriber` ([src/transcribe.py](src/transcribe.py)) that handles `voice` / `audio` messages: downloads the file via `bot.download`, posts it to Groq's `audio/transcriptions` endpoint, echoes the transcript as a Markdown blockquote, then feeds it into `agent.ask_stream` like any text message. Disabled when `groq_api_key` is unset.
 
 Entry point [src/bot.py](src/bot.py) wires those together and registers handlers. The final response is converted from Markdown to Telegram MarkdownV2 via `telegramify-markdown`, with a small pre-pass that inserts a blank line after closing fenced code blocks. Long replies are split into ≤4000-char chunks; a chunk that fails MarkdownV2 parsing falls back to plain text.
 
@@ -47,6 +48,8 @@ Entry point [src/bot.py](src/bot.py) wires those together and registers handlers
 `logs_dir: null` → console-only logging; otherwise rotating file handlers (10 MB × 5) under `<logs_dir>/<internal_name>/`.
 
 Other tunables on `BotConfig` ([src/config/__init__.py](src/config/__init__.py)): `draft_interval_sec` (0.2), `approval_timeout_sec` (300), `agent_timeout_sec` (180, hard cap per Claude turn), `session_idle_ttl_sec` (3600, idle GC; `0` disables), `chat_logger_capacity` (256, LRU cap on per-chat file loggers).
+
+Voice transcription (Groq): `groq_api_key` (env override `GROQ_API_KEY_<INTERNAL_NAME>`, then `GROQ_API_KEY`; `null` disables the voice handler), `groq_model` (default `whisper-large-v3-turbo`), `groq_timeout_sec` (60), `voice_max_duration_sec` (600, `0` disables the cap).
 
 ## Permissions
 

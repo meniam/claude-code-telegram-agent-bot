@@ -7,6 +7,9 @@
         "working_dir": "/home/brain/workdir",
         "logs_dir": "/var/log/telegram-agent-bot",
         "draft_interval_sec": 0.2,
-        "approval_timeout_sec": 300
+        "approval_timeout_sec": 300,
+        "groq_api_key": "put-groq-api-key-here-or-set-GROQ_API_KEY_env",
+        "groq_model": "whisper-large-v3-turbo",
+        "voice_max_duration_sec": 600
     }
 }

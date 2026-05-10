@@ -9,6 +9,7 @@ Python Telegram bot that talks to Claude through the Claude Agent SDK + aiogram.
 - **Node.js 18+** — needed once to install the Claude Code CLI and run `claude login`. The SDK ships a bundled `claude` for runtime use.
 - A **Telegram** account and a bot token from [@BotFather](https://t.me/BotFather).
 - A **Claude / Max / Team** subscription ([claude login](https://docs.anthropic.com/en/docs/claude-code/setup)) **or** an API key from [console.anthropic.com](https://console.anthropic.com/).
+- *(optional)* A **Groq API key** from [console.groq.com/keys](https://console.groq.com/keys) — required only if you want voice/audio messages to be transcribed.
 
 ## 1. Install the Claude Code CLI
 
@@ -80,6 +81,10 @@ Open `src/config/config.json` and fill in at least one section:
 | `agent_timeout_sec` | Hard timeout per Claude turn (seconds). Default `180`. |
 | `session_idle_ttl_sec` | Idle TTL for a per-chat `ClaudeSDKClient`; closed by background GC after this many seconds without traffic. Default `3600`. Set `0` to disable. |
 | `chat_logger_capacity` | Max number of per-chat file loggers kept in memory (LRU). Default `256`. |
+| `groq_api_key` | Groq API key for voice/audio transcription. Override via env `GROQ_API_KEY_<INTERNAL_NAME>` or fallback `GROQ_API_KEY`. `null` / missing → voice handler is disabled. |
+| `groq_model` | Whisper model on Groq. Default `whisper-large-v3-turbo`. |
+| `groq_timeout_sec` | HTTP timeout for the transcription call. Default `60.0`. |
+| `voice_max_duration_sec` | Reject voice/audio longer than this (seconds). Default `600`. `0` disables the cap. |
 
 `internal_name` is the top-level key (`brain` in the example). The log subdirectory is named after it.
 
@@ -120,6 +125,8 @@ Commands:
 - `/start` — greeting.
 - `/new` — start a fresh Claude Code session (context is dropped).
 
+Voice / audio messages are transcribed via Groq when `groq_api_key` is set — the bot echoes the transcript as a blockquote and runs the same agent flow on the recognized text.
+
 ## 6. Restricting who can talk to the bot
 
 Set `allowed_chat_ids` to a list of Telegram chat IDs that may use the bot:
@@ -138,7 +145,23 @@ When someone outside the list sends a message, the bot replies with their `chat_
 
 To find your own chat_id quickly: lock the bot with `[]`, send a message, copy the `chat_id` from the refusal, then add it.
 
-## 7. Permission prompts
+## 7. Voice transcription (optional)
+
+Voice notes and `audio` attachments are routed to Groq's OpenAI-compatible `audio/transcriptions` endpoint. Setup:
+
+1. Create a key at [console.groq.com/keys](https://console.groq.com/keys).
+2. Either drop it into `config.json` as `groq_api_key`, or export `GROQ_API_KEY=...` (per-bot override: `GROQ_API_KEY_<INTERNAL_NAME>`).
+3. Restart the process — startup logs print `groq transcription enabled (model=...)` when the feature is active.
+
+Tunables:
+
+- `groq_model` — default `whisper-large-v3-turbo`. Switch to `whisper-large-v3` for higher accuracy.
+- `groq_timeout_sec` — HTTP timeout. Default `60.0`.
+- `voice_max_duration_sec` — drop audio longer than this. Default `600`. `0` disables the cap.
+
+Behaviour without a key: any voice/audio message gets a one-line refusal (`voice_disabled`) and is not forwarded to the agent.
+
+## 8. Permission prompts
 
 When Claude wants to use an `ask`-level tool (Bash, Write, Edit, etc.) the bot sends inline buttons:
 
@@ -158,7 +181,7 @@ To allow a tool persistently (across restarts), add a rule manually to `<working
 
 The SDK loads `user/project/local` settings — those rules never reach the permission gate.
 
-## 8. Directory layout
+## 9. Directory layout
 
 ```
 agent-bot/
@@ -169,6 +192,7 @@ agent-bot/
 │   ├── streaming.py        # DraftStreamer
 │   ├── permissions.py      # TelegramPermissionGate
 │   ├── reactions.py        # keyword → emoji reactions
+│   ├── transcribe.py       # GroqTranscriber (voice/audio → text)
 │   ├── logs.py             # BotLogs: bot.log + per-chat files
 │   ├── config/
 │   │   ├── __init__.py     # BotConfig, load()
@@ -185,7 +209,7 @@ agent-bot/
 └── .gitignore
 ```
 
-## 9. Updating
+## 10. Updating
 
 ```bash
 git pull
@@ -206,3 +230,6 @@ Restart the process so changes take effect.
 | Bot is silent | Check logs at `logs/<internal_name>/bot.log`. Confirm `Run polling` appeared. |
 | Permission prompt every time | No rules in `.claude/settings.local.json` inside `working_dir`. Or use the "Always" button in chat. |
 | No streaming animation | `sendMessageDraft` is a recent Bot API method. Make sure your Telegram client is up to date. |
+| Voice message gets `voice_disabled` reply | `groq_api_key` not set in `config.json` and no `GROQ_API_KEY` / `GROQ_API_KEY_<NAME>` env var. |
+| Transcription returns `voice_error` | Check `bot.log` — usually a bad API key, exhausted quota, or unsupported audio format. |
+| Voice longer than expected gets rejected | Bump `voice_max_duration_sec` (default `600`s) or set it to `0`. |

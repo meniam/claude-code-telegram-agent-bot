@@ -25,6 +25,11 @@
   "callback_received": "Принято",
   "default_system_prompt": "Ты дружелюбный ассистент в Telegram. Отвечай кратко и по делу.",
   "access_denied": "🔒 Доступ к этому боту ограничен.\n\nТвой Telegram chat ID: `{chat_id}`\n\nПерешли его администратору бота — он добавит ID в `allowed_chat_ids` в `config.json`, после чего ты сможешь общаться с ботом.",
+  "voice_recognized": "🎙 Распознано",
+  "voice_disabled": "🎙 Распознавание голосовых сообщений не настроено: нет groq_api_key.",
+  "voice_empty": "🎙 Не удалось распознать речь в аудио.",
+  "voice_too_long": "🎙 Аудио длиннее {seconds} с — пропущено.",
+  "voice_error": "🎙 Ошибка распознавания: {error}",
   "default_reaction": "👀",
   "reactions": [
     {"pattern": "спасиб|благодар", "emoji": "❤"},
